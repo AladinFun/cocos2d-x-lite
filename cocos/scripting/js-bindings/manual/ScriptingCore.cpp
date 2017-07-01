@@ -692,6 +692,7 @@ JS::PersistentRootedScript* ScriptingCore::getScript(const std::string& path)
 
 JS::PersistentRootedScript* ScriptingCore::compileScript(const std::string& path, JS::HandleObject global, JSContext* cx)
 {
+    LOGD("ScriptingCore:: compileScript -> %s", path.c_str());
     if (path.empty()) {
         return nullptr;
     }
@@ -834,12 +835,24 @@ bool ScriptingCore::runScript(const std::string& path, JS::HandleObject global, 
 
 bool ScriptingCore::requireScript(const char *path, JS::MutableHandleValue jsvalRet)
 {
+	LOGD("ScriptingCore::requireScript[1] -> %s", path);
+	//跳过protobuf库中的动态require
+	const char* pathStr = (const char*) path;
+	const char* str_fs = "fs";
+	const char* str_long = "long";
+	const char* str_buffer = "buffer";
+	if(strcmp(pathStr, str_fs) == 0 || strcmp(pathStr, str_long) == 0 || strcmp(pathStr, str_buffer) == 0) {
+        LOGD("ignore node.js inquire module: %s", pathStr);
+        jsvalRet.setUndefined();
+		return true;
+	}
     JS::RootedObject global(_cx, _global->get());
     return requireScript(path, global, _cx, jsvalRet);
 }
 
 bool ScriptingCore::requireScript(const char *path, JS::HandleObject global, JSContext* cx, JS::MutableHandleValue jsvalRet)
 {
+    LOGD("ScriptingCore::requireScript[2] -> %s", path);
     if (cx == nullptr)
     {
         cx = _cx;
@@ -1183,6 +1196,7 @@ bool ScriptingCore::executeScript(JSContext *cx, uint32_t argc, jsval *vp)
         JS::RootedValue jsstr(cx, args.get(0));
         JSString* str = JS::ToString(cx, jsstr);
         JSStringWrapper path(str);
+        
         bool res = false;
         JS::RootedValue jsret(cx);
         if (argc == 2 && args.get(1).isString()) {
