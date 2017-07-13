@@ -316,7 +316,7 @@ public:
      * @return @~english Return true if succeed, otherwise return false.
      */
     bool runScript(const std::string& path, JS::HandleObject global, JSContext* cx = NULL);
-
+	bool shouldIgnoreForRequire(const char *path);
     /**@~english
      * Require the specified js file
      * The difference between run and require is that require returns the export object of the script

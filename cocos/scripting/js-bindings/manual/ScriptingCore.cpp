@@ -833,9 +833,8 @@ bool ScriptingCore::runScript(const std::string& path, JS::HandleObject global, 
     return evaluatedOK;
 }
 
-bool ScriptingCore::requireScript(const char *path, JS::MutableHandleValue jsvalRet)
+bool ScriptingCore::shouldIgnoreForRequire(const char *path)
 {
-	LOGD("ScriptingCore::requireScript[1] -> %s", path);
 	//跳过protobuf库中的动态require
 	const char* pathStr = (const char*) path;
 	const char* str_fs = "fs";
@@ -843,7 +842,16 @@ bool ScriptingCore::requireScript(const char *path, JS::MutableHandleValue jsval
 	const char* str_buffer = "buffer";
 	if(strcmp(pathStr, str_fs) == 0 || strcmp(pathStr, str_long) == 0 || strcmp(pathStr, str_buffer) == 0) {
         LOGD("ignore node.js inquire module: %s", pathStr);
-        jsvalRet.setUndefined();
+		return true;
+	}
+	return false;
+}
+
+bool ScriptingCore::requireScript(const char *path, JS::MutableHandleValue jsvalRet)
+{
+	LOGD("ScriptingCore::requireScript[1] -> %s", path);
+	if(shouldIgnoreForRequire(path)) {
+		jsvalRet.setUndefined();
 		return true;
 	}
     JS::RootedObject global(_cx, _global->get());
@@ -853,6 +861,10 @@ bool ScriptingCore::requireScript(const char *path, JS::MutableHandleValue jsval
 bool ScriptingCore::requireScript(const char *path, JS::HandleObject global, JSContext* cx, JS::MutableHandleValue jsvalRet)
 {
     LOGD("ScriptingCore::requireScript[2] -> %s", path);
+	if(shouldIgnoreForRequire(path)) {
+		return true;
+	}
+	
     if (cx == nullptr)
     {
         cx = _cx;
