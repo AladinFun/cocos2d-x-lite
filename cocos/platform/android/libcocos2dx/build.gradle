@@ -9,6 +9,7 @@ android {
 		targetSdkVersion PROP_TARGET_SDK_VERSION
 		versionCode 1
 		versionName "1.0"
+		consumerProguardFiles 'proguard-rules.pro' // 自定义混淆配置
 	}
 
 	sourceSets.main {
