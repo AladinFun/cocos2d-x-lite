@@ -209,7 +209,7 @@ void Node::cleanup()
     this->stopAllActions();
     // timers
     this->unscheduleAllCallbacks();
-
+    // Event listeners
     _eventDispatcher->removeEventListenersForTarget(this);
     
     for( const auto &child: _children)

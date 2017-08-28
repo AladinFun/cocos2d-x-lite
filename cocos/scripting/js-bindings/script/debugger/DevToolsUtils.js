@@ -112,7 +112,7 @@ DevToolsUtils.safeErrorString = function safeErrorString(aError) {
  * Report that |aWho| threw an exception, |aException|.
  */
 DevToolsUtils.reportException = function reportException(aWho, aException) {
-  let msg = aWho + " threw an exception: " + DevToolsUtils.safeErrorString(aException);
+  let msg = "" + aWho + " threw an exception: " + DevToolsUtils.safeErrorString(aException);
 
   log(msg + "\n");
 
@@ -221,8 +221,19 @@ DevToolsUtils.executeSoon = function executeSoon(aFn) {
   if (isWorker) {
     setImmediate(aFn);
   } else {
+    let executor;
+    // Only enable async stack reporting when DEBUG_JS_MODULES is set
+    // (customized local builds) to avoid a performance penalty.
+    if (AppConstants.DEBUG_JS_MODULES || flags.testing) {
+      let stack = getStack();
+      executor = () => {
+        callFunctionWithAsyncStack(aFn, stack, "DevToolsUtils.executeSoon");
+      };
+    } else {
+      executor = aFn;
+    }
     Services.tm.mainThread.dispatch({
-      run: DevToolsUtils.makeInfallible(aFn)
+      run: DevToolsUtils.makeInfallible(executor)
     }, Ci.nsIThread.DISPATCH_NORMAL);
   }
 };
@@ -234,7 +245,7 @@ DevToolsUtils.executeSoon = function executeSoon(aFn) {
  *         A promise that is resolved after the next tick in the event loop.
  */
 DevToolsUtils.waitForTick = function waitForTick() {
-  let deferred = promise.defer();
+  let deferred = Promise.defer();
   DevToolsUtils.executeSoon(deferred.resolve);
   return deferred.promise;
 };
@@ -248,7 +259,7 @@ DevToolsUtils.waitForTick = function waitForTick() {
  *         A promise that is resolved after the specified amount of time passes.
  */
 DevToolsUtils.waitForTime = function waitForTime(aDelay) {
-  let deferred = promise.defer();
+  let deferred = Promise.defer();
   require("Timer").setTimeout(deferred.resolve, aDelay);
   return deferred.promise;
 };
@@ -269,7 +280,7 @@ DevToolsUtils.waitForTime = function waitForTime(aDelay) {
  *          over, and all promises returned by the aFn callback are resolved.
  */
 DevToolsUtils.yieldingEach = function yieldingEach(aArray, aFn) {
-  const deferred = promise.defer();
+  const deferred = Promise.defer();
 
   let i = 0;
   let len = aArray.length;
@@ -299,7 +310,7 @@ DevToolsUtils.yieldingEach = function yieldingEach(aArray, aFn) {
     deferred.resolve();
   }());
 
-  return promise.all(outstanding);
+  return Promise.all(outstanding);
 }
 
 /**
@@ -375,9 +386,14 @@ DevToolsUtils.getProperty = function getProperty(aObj, aKey) {
 DevToolsUtils.hasSafeGetter = function hasSafeGetter(aDesc) {
   // Scripted functions that are CCWs will not appear scripted until after
   // unwrapping.
-  // let fn = aDesc.get.unwrap();
-  let fn = aDesc.get;
-  return fn && fn.callable && fn.class == "Function" && fn.script === undefined;
+  try {
+    // let fn = aDesc.get.unwrap();
+    let fn = aDesc.get;
+    return fn && fn.callable && fn.class == "Function" && fn.script === undefined;
+  } catch (e) {
+    // Avoid exception 'Object in compartment marked as invisible to Debugger'
+    return false;
+  }
 };
 
 /**
@@ -436,7 +452,7 @@ DevToolsUtils.dumpv = function(msg) {
 // loader, so define it on dumpn instead.
 DevToolsUtils.dumpv.wantVerbose = false;
 
-DevToolsUtils.dbg_assert = function dbg_assert(cond, e) {
+DevToolsUtils.assert = function assert(cond, e) {
   if (!cond) {
     return e;
   }
@@ -537,7 +553,7 @@ DevToolsUtils.defineLazyGetter(this, "TextDecoder", () => {
 });
 
 DevToolsUtils.defineLazyGetter(this, "NetworkHelper", () => {
-  return require("devtools/toolkit/webconsole/network-helper");
+  return require("devtools/shared/webconsole/network-helper");
 });
 
 /**
@@ -550,8 +566,15 @@ DevToolsUtils.defineLazyGetter(this, "NetworkHelper", () => {
  *        - loadFromCache: if false, will bypass the cache and
  *          always load fresh from the network (default: true)
  *        - policy: the nsIContentPolicy type to apply when fetching the URL
+ *                  (only works when loading from system principal)
  *        - window: the window to get the loadGroup from
  *        - charset: the charset to use if the channel doesn't provide one
+ *        - principal: the principal to use, if omitted, the request is loaded
+ *                     with a codebase principal corresponding to the url being
+ *                     loaded, using the origin attributes of the window, if any.
+ *        - cacheKey: when loading from cache, use this key to retrieve a cache
+ *                    specific to a given SHEntry. (Allows loading POST
+ *                    requests from cache)
  * @returns Promise that resolves with an object with the following members on
  *          success:
  *           - content: the document at that URL, as a string,
@@ -563,17 +586,19 @@ DevToolsUtils.defineLazyGetter(this, "NetworkHelper", () => {
  * without relying on caching when we can (not for eval, etc.):
  * http://www.softwareishard.com/blog/firebug/nsitraceablechannel-intercept-http-traffic/
  */
-function mainThreadFetch(aURL, aOptions={ loadFromCache: true,
+function mainThreadFetch(aURL, aOptions = { loadFromCache: true,
                                           policy: Ci.nsIContentPolicy.TYPE_OTHER,
                                           window: null,
-                                          charset: null }) {
+                                          charset: null,
+                                          principal: null,
+                                          cacheKey: null }) {
   // Create a channel.
   let url = aURL.split(" -> ").pop();
   let channel;
   try {
     channel = newChannelForURL(url, aOptions);
   } catch (ex) {
-    return promise.reject(ex);
+    return Promise.reject(ex);
   }
 
   // Set the channel options.
@@ -589,12 +614,12 @@ function mainThreadFetch(aURL, aOptions={ loadFromCache: true,
                           .loadGroup;
   }
 
-  let deferred = promise.defer();
+  let deferred = Promise.defer();
   let onResponse = (stream, status, request) => {
-    if (!components.isSuccessCode(status)) {
-      deferred.reject(new Error('Failed to fetch ${url}. Code ${status}.'));
-      return;
-    }
+//    if (!components.isSuccessCode(status)) {
+//      deferred.reject(new Error('Failed to fetch ${url}. Code ${status}.'));
+//      return;
+//    }
 
     try {
       // We cannot use NetUtil to do the charset conversion as if charset
@@ -652,7 +677,7 @@ function mainThreadFetch(aURL, aOptions={ loadFromCache: true,
   try {
     NetUtil.asyncFetch(channel, onResponse);
   } catch (ex) {
-    return promise.reject(ex);
+    return Promise.reject(ex);
   }
 
   return deferred.promise;
@@ -720,7 +745,7 @@ DevToolsUtils.settleAll = values => {
     throw new Error("settleAll() expects an iterable.");
   }
 
-  let deferred = promise.defer();
+  let deferred = Promise.defer();
 
   values = Array.isArray(values) ? values : [...values];
   let countdown = values.length;
@@ -797,12 +822,12 @@ DevToolsUtils.openFileStream = function (filePath) {
     NetUtil.asyncFetch(
       { uri, loadUsingSystemPrincipal: true },
       (stream, result) => {
-        if (!components.isSuccessCode(result)) {
-          reject(new Error('Could not open "${filePath}": result = ${result}'));
-          return;
-        }
+//        if (!components.isSuccessCode(result)) {
+//          reject(new Error('Could not open "${filePath}": result = ${result}'));
+//          return;
+//        }
 
-        resolve(stream);
+        Promise.resolve(stream);
       }
     );
   });

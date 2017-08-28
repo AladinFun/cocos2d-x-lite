@@ -204,15 +204,6 @@ cc.speed = cc.Speed.create = function (action, speed) {
     return new cc.Speed(action, speed);
 };
 
-cc.Follow.prototype._ctor = function (followedNode, rect) {
-    if (followedNode)
-        rect ? this.initWithTarget(followedNode, rect)
-             : this.initWithTarget(followedNode);
-};
-cc.follow = cc.Follow.create = function (followedNode, rect) {
-    return new cc.Follow(followedNode, rect);
-};
-
 cc.CardinalSplineTo.prototype._ctor = cc.CardinalSplineBy.prototype._ctor = function(duration, points, tension) {
     tension !== undefined && this.initWithDuration(duration, points, tension);
 };
@@ -282,10 +273,19 @@ cc.Place.prototype._ctor = function(pos, y) {
 };
 
 cc.CallFunc.prototype._ctor = function(selector, selectorTarget, data) {
-    if(selector !== undefined){
-        if(selectorTarget === undefined)
+    if (selector !== undefined) {
+        if (selectorTarget === undefined) {
             this.initWithFunction(selector);
-        else this.initWithFunction(selector, selectorTarget, data);
+        }
+        else {
+            var callback = selector;
+            if (data !== undefined) {
+                callback = function (sender) {
+                    selector.call(this, sender, data);
+                }
+            }
+            this.initWithFunction(callback, selectorTarget);
+        }
     }
 };
 

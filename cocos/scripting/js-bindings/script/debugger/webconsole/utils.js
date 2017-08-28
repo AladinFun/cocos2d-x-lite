@@ -1,76 +1,53 @@
-/* -*- js-indent-level: 2; indent-tabs-mode: nil -*- */
-/* vim: set ft=javascript ts=2 et sw=2 tw=80: */
+/* -*- indent-tabs-mode: nil; js-indent-level: 2 -*- */
+/* vim: set ft= javascript ts=2 et sw=2 tw=80: */
 /* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-"use strict";
-
-// const {Cc, Ci, Cu, components} = require("chrome");
-// const {isWindowIncluded} = require("devtools/toolkit/layout/utils");
-
-// Cu.import("resource://gre/modules/XPCOMUtils.jsm");
-
-// loader.lazyImporter(this, "Services", "resource://gre/modules/Services.jsm");
-
-// TODO: Bug 842672 - browser/ imports modules from toolkit/.
-// Note that these are only used in WebConsoleCommands, see $0 and pprint().
-// loader.lazyImporter(this, "VariablesView", "resource:///modules/devtools/VariablesView.jsm");
-// const DevToolsUtils = require("devtools/toolkit/DevToolsUtils");
-
-// Match the function name from the result of toString() or toSource().
-//
-// Examples:
-// (function foobar(a, b) { ...
-// function foobar2(a) { ...
-// function() { ...
-
-var exports = exports || {};
-
-
-const REGEX_MATCH_FUNCTION_NAME = /^\(?function\s+([^(\s]+)\s*\(/;
-
-// Match the function arguments from the result of toString() or toSource().
-const REGEX_MATCH_FUNCTION_ARGS = /^\(?function\s*[^\s(]*\s*\((.+?)\)/;
-
-// Number of terminal entries for the self-xss prevention to go away
-const CONSOLE_ENTRY_THRESHOLD = 5;
-
-// Provide an easy way to bail out of even attempting an autocompletion
-// if an object has way too many properties. Protects against large objects
-// with numeric values that wouldn't be tallied towards MAX_AUTOCOMPLETIONS.
-const MAX_AUTOCOMPLETE_ATTEMPTS = exports.MAX_AUTOCOMPLETE_ATTEMPTS = 100000;
-
-const CONSOLE_WORKER_IDS =  exports.CONSOLE_WORKER_IDS =[ 'SharedWorker', 'ServiceWorker', 'Worker' ];
-
-// Prevent iterating over too many properties during autocomplete suggestions.
-const MAX_AUTOCOMPLETIONS = exports.MAX_AUTOCOMPLETIONS = 1500;
+ "use strict";
+ 
+ //const {Cc, Ci, Cu, components} = require("chrome");
+ //const {isWindowIncluded} = require("devtools/shared/layout/utils");
+ //const Services = require("Services");
+ //const {XPCOMUtils} = require("resource://gre/modules/XPCOMUtils.jsm");
+ 
+ // TODO: Bug 842672 - browser/ imports modules from toolkit/.
+ // Note that these are only used in WebConsoleCommands, see $0 and pprint().
+ //loader.lazyImporter(this, "VariablesView", "resource://devtools/client/shared/widgets/VariablesView.jsm");
+ 
+ //XPCOMUtils.defineLazyServiceGetter(this,
+ //                                   "swm",
+ //                                   "@mozilla.org/serviceworkers/manager;1",
+ //                                   "nsIServiceWorkerManager");
+ 
+const CONSOLE_WORKER_IDS = [
+  "SharedWorker",
+  "ServiceWorker",
+  "Worker"
+];
 
 var WebConsoleUtils = {
 
   /**
-   * Wrap a string in an nsISupportsString object.
+   * Given a message, return one of CONSOLE_WORKER_IDS if it matches
+   * one of those.
    *
-   * @param string aString
-   * @return nsISupportsString
+   * @return string
    */
-  supportsString: function WCU_supportsString(aString)
-  {
-    let str = Cc["@mozilla.org/supports-string;1"].
-              createInstance(Ci.nsISupportsString);
-    str.data = aString;
-    return str;
+  getWorkerType: function (message) {
+    let id = message ? message.innerID : null;
+    return CONSOLE_WORKER_IDS[CONSOLE_WORKER_IDS.indexOf(id)] || null;
   },
 
   /**
    * Clone an object.
    *
-   * @param object aObject
+   * @param object object
    *        The object you want cloned.
-   * @param boolean aRecursive
+   * @param boolean recursive
    *        Tells if you want to dig deeper into the object, to clone
    *        recursively.
-   * @param function [aFilter]
+   * @param function [filter]
    *        Optional, filter function, called for every property. Three
    *        arguments are passed: key, value and object. Return true if the
    *        property should be added to the cloned object. Return false to skip
@@ -78,29 +55,27 @@ var WebConsoleUtils = {
    * @return object
    *         The cloned object.
    */
-  cloneObject: function WCU_cloneObject(aObject, aRecursive, aFilter)
-  {
-    if (typeof aObject != "object") {
-      return aObject;
+  cloneObject: function (object, recursive, filter) {
+    if (typeof object != "object") {
+      return object;
     }
 
     let temp;
 
-    if (Array.isArray(aObject)) {
+    if (Array.isArray(object)) {
       temp = [];
-      Array.forEach(aObject, function(aValue, aIndex) {
-        if (!aFilter || aFilter(aIndex, aValue, aObject)) {
-          temp.push(aRecursive ? WCU_cloneObject(aValue) : aValue);
+      Array.forEach(object, function (value, index) {
+        if (!filter || filter(index, value, object)) {
+          temp.push(recursive ? WebConsoleUtils.cloneObject(value) : value);
         }
       });
-    }
-    else {
+    } else {
       temp = {};
-      for (let key in aObject) {
-        let value = aObject[key];
-        if (aObject.hasOwnProperty(key) &&
-            (!aFilter || aFilter(key, value, aObject))) {
-          temp[key] = aRecursive ? WCU_cloneObject(value) : value;
+      for (let key in object) {
+        let value = object[key];
+        if (object.hasOwnProperty(key) &&
+            (!filter || filter(key, value, object))) {
+          temp[key] = recursive ? WebConsoleUtils.cloneObject(value) : value;
         }
       }
     }
@@ -109,52 +84,32 @@ var WebConsoleUtils = {
   },
 
   /**
-   * Copies certain style attributes from one element to another.
-   *
-   * @param nsIDOMNode aFrom
-   *        The target node.
-   * @param nsIDOMNode aTo
-   *        The destination node.
-   */
-  copyTextStyles: function WCU_copyTextStyles(aFrom, aTo)
-  {
-    let win = aFrom.ownerDocument.defaultView;
-    let style = win.getComputedStyle(aFrom);
-    aTo.style.fontFamily = style.getPropertyCSSValue("font-family").cssText;
-    aTo.style.fontSize = style.getPropertyCSSValue("font-size").cssText;
-    aTo.style.fontWeight = style.getPropertyCSSValue("font-weight").cssText;
-    aTo.style.fontStyle = style.getPropertyCSSValue("font-style").cssText;
-  },
-
-  /**
    * Gets the ID of the inner window of this DOM window.
    *
-   * @param nsIDOMWindow aWindow
+   * @param nsIDOMWindow window
    * @return integer
-   *         Inner ID for the given aWindow.
+   *         Inner ID for the given window.
    */
-  getInnerWindowId: function WCU_getInnerWindowId(aWindow)
-  {
-    return aWindow.QueryInterface(Ci.nsIInterfaceRequestor).
-             getInterface(Ci.nsIDOMWindowUtils).currentInnerWindowID;
+  getInnerWindowId: function (window) {
+    return window.QueryInterface(Ci.nsIInterfaceRequestor)
+             .getInterface(Ci.nsIDOMWindowUtils).currentInnerWindowID;
   },
 
   /**
    * Recursively gather a list of inner window ids given a
    * top level window.
    *
-   * @param nsIDOMWindow aWindow
+   * @param nsIDOMWindow window
    * @return Array
    *         list of inner window ids.
    */
-  getInnerWindowIDsForFrames: function WCU_getInnerWindowIDsForFrames(aWindow)
-  {
-    let innerWindowID = this.getInnerWindowId(aWindow);
+  getInnerWindowIDsForFrames: function (window) {
+    let innerWindowID = this.getInnerWindowId(window);
     let ids = [innerWindowID];
 
-    if (aWindow.frames) {
-      for (let i = 0; i < aWindow.frames.length; i++) {
-        let frame = aWindow.frames[i];
+    if (window.frames) {
+      for (let i = 0; i < window.frames.length; i++) {
+        let frame = window.frames[i];
         ids = ids.concat(this.getInnerWindowIDsForFrames(frame));
       }
     }
@@ -162,121 +117,21 @@ var WebConsoleUtils = {
     return ids;
   },
 
-
-  /**
-   * Gets the ID of the outer window of this DOM window.
-   *
-   * @param nsIDOMWindow aWindow
-   * @return integer
-   *         Outer ID for the given aWindow.
-   */
-  getOuterWindowId: function WCU_getOuterWindowId(aWindow)
-  {
-    return aWindow.QueryInterface(Ci.nsIInterfaceRequestor).
-           getInterface(Ci.nsIDOMWindowUtils).outerWindowID;
-  },
-
-  /**
-   * Abbreviates the given source URL so that it can be displayed flush-right
-   * without being too distracting.
-   *
-   * @param string aSourceURL
-   *        The source URL to shorten.
-   * @param object [aOptions]
-   *        Options:
-   *        - onlyCropQuery: boolean that tells if the URL abbreviation function
-   *        should only remove the query parameters and the hash fragment from
-   *        the given URL.
-   * @return string
-   *         The abbreviated form of the source URL.
-   */
-  abbreviateSourceURL:
-  function WCU_abbreviateSourceURL(aSourceURL, aOptions = {})
-  {
-    if (!aOptions.onlyCropQuery && aSourceURL.substr(0, 5) == "data:") {
-      let commaIndex = aSourceURL.indexOf(",");
-      if (commaIndex > -1) {
-        aSourceURL = "data:" + aSourceURL.substring(commaIndex + 1);
-      }
-    }
-
-    // Remove any query parameters.
-    let hookIndex = aSourceURL.indexOf("?");
-    if (hookIndex > -1) {
-      aSourceURL = aSourceURL.substring(0, hookIndex);
-    }
-
-    // Remove any hash fragments.
-    let hashIndex = aSourceURL.indexOf("#");
-    if (hashIndex > -1) {
-      aSourceURL = aSourceURL.substring(0, hashIndex);
-    }
-
-    // Remove a trailing "/".
-    if (aSourceURL[aSourceURL.length - 1] == "/") {
-      aSourceURL = aSourceURL.replace(/\/+$/, "");
-    }
-
-    // Remove all but the last path component.
-    if (!aOptions.onlyCropQuery) {
-      let slashIndex = aSourceURL.lastIndexOf("/");
-      if (slashIndex > -1) {
-        aSourceURL = aSourceURL.substring(slashIndex + 1);
-      }
-    }
-
-    return aSourceURL;
-  },
-
-  /**
-   * Tells if the given function is native or not.
-   *
-   * @param function aFunction
-   *        The function you want to check if it is native or not.
-   * @return boolean
-   *         True if the given function is native, false otherwise.
-   */
-  isNativeFunction: function WCU_isNativeFunction(aFunction)
-  {
-    return typeof aFunction == "function" && !("prototype" in aFunction);
-  },
-
-  /**
-   * Tells if the given property of the provided object is a non-native getter or
-   * not.
-   *
-   * @param object aObject
-   *        The object that contains the property.
-   * @param string aProp
-   *        The property you want to check if it is a getter or not.
-   * @return boolean
-   *         True if the given property is a getter, false otherwise.
-   */
-  isNonNativeGetter: function WCU_isNonNativeGetter(aObject, aProp)
-  {
-    if (typeof aObject != "object") {
-      return false;
-    }
-    let desc = this.getPropertyDescriptor(aObject, aProp);
-    return desc && desc.get && !this.isNativeFunction(desc.get);
-  },
-
   /**
    * Get the property descriptor for the given object.
    *
-   * @param object aObject
+   * @param object object
    *        The object that contains the property.
-   * @param string aProp
+   * @param string prop
    *        The property you want to get the descriptor for.
    * @return object
    *         Property descriptor.
    */
-  getPropertyDescriptor: function WCU_getPropertyDescriptor(aObject, aProp)
-  {
+  getPropertyDescriptor: function (object, prop) {
     let desc = null;
-    while (aObject) {
+    while (object) {
       try {
-        if ((desc = Object.getOwnPropertyDescriptor(aObject, aProp))) {
+        if ((desc = Object.getOwnPropertyDescriptor(object, prop))) {
           break;
         }
       } catch (ex) {
@@ -290,7 +145,7 @@ var WebConsoleUtils = {
       }
 
       try {
-        aObject = Object.getPrototypeOf(aObject);
+        object = Object.getPrototypeOf(object);
       } catch (ex) {
         if (ex.name == "TypeError") {
           return desc;
@@ -302,915 +157,78 @@ var WebConsoleUtils = {
   },
 
   /**
-   * Sort function for object properties.
-   *
-   * @param object a
-   *        Property descriptor.
-   * @param object b
-   *        Property descriptor.
-   * @return integer
-   *         -1 if a.name < b.name,
-   *         1 if a.name > b.name,
-   *         0 otherwise.
-   */
-  propertiesSort: function WCU_propertiesSort(a, b)
-  {
-    // Convert the pair.name to a number for later sorting.
-    let aNumber = parseFloat(a.name);
-    let bNumber = parseFloat(b.name);
-
-    // Sort numbers.
-    if (!isNaN(aNumber) && isNaN(bNumber)) {
-      return -1;
-    }
-    else if (isNaN(aNumber) && !isNaN(bNumber)) {
-      return 1;
-    }
-    else if (!isNaN(aNumber) && !isNaN(bNumber)) {
-      return aNumber - bNumber;
-    }
-    // Sort string.
-    else if (a.name < b.name) {
-      return -1;
-    }
-    else if (a.name > b.name) {
-      return 1;
-    }
-    else {
-      return 0;
-    }
-  },
-
-  /**
    * Create a grip for the given value. If the value is an object,
    * an object wrapper will be created.
    *
-   * @param mixed aValue
+   * @param mixed value
    *        The value you want to create a grip for, before sending it to the
    *        client.
-   * @param function aObjectWrapper
-   *        If the value is an object then the aObjectWrapper function is
+   * @param function objectWrapper
+   *        If the value is an object then the objectWrapper function is
    *        invoked to give us an object grip. See this.getObjectGrip().
    * @return mixed
    *         The value grip.
    */
-  createValueGrip: function WCU_createValueGrip(aValue, aObjectWrapper)
-  {
-    switch (typeof aValue) {
+  createValueGrip: function (value, objectWrapper) {
+    switch (typeof value) {
       case "boolean":
-        return aValue;
+        return value;
       case "string":
-        return aObjectWrapper(aValue);
+        return objectWrapper(value);
       case "number":
-        if (aValue === Infinity) {
+        if (value === Infinity) {
           return { type: "Infinity" };
-        }
-        else if (aValue === -Infinity) {
+        } else if (value === -Infinity) {
           return { type: "-Infinity" };
-        }
-        else if (Number.isNaN(aValue)) {
+        } else if (Number.isNaN(value)) {
           return { type: "NaN" };
-        }
-        else if (!aValue && 1 / aValue === -Infinity) {
+        } else if (!value && 1 / value === -Infinity) {
           return { type: "-0" };
         }
-        return aValue;
+        return value;
       case "undefined":
         return { type: "undefined" };
       case "object":
-        if (aValue === null) {
+        if (value === null) {
           return { type: "null" };
         }
+        // Fall through.
       case "function":
-        return aObjectWrapper(aValue);
+        return objectWrapper(value);
       default:
-        Cu.reportError("Failed to provide a grip for value of " + typeof aValue
-                       + ": " + aValue);
+        console.error("Failed to provide a grip for value of " + typeof value
+                      + ": " + value);
         return null;
     }
   },
-
-  /**
-   * Check if the given object is an iterator or a generator.
-   *
-   * @param object aObject
-   *        The object you want to check.
-   * @return boolean
-   *         True if the given object is an iterator or a generator, otherwise
-   *         false is returned.
-   */
-  isIteratorOrGenerator: function WCU_isIteratorOrGenerator(aObject)
-  {
-    if (aObject === null) {
-      return false;
-    }
-
-    if (typeof aObject == "object") {
-      if (typeof aObject.__iterator__ == "function" ||
-          aObject.constructor && aObject.constructor.name == "Iterator") {
-        return true;
-      }
-
-      try {
-        let str = aObject.toString();
-        if (typeof aObject.next == "function" &&
-            str.indexOf("[object Generator") == 0) {
-          return true;
-        }
-      }
-      catch (ex) {
-        // window.history.next throws in the typeof check above.
-        return false;
-      }
-    }
-
-    return false;
-  },
-
-  /**
-   * Determine if the given request mixes HTTP with HTTPS content.
-   *
-   * @param string aRequest
-   *        Location of the requested content.
-   * @param string aLocation
-   *        Location of the current page.
-   * @return boolean
-   *         True if the content is mixed, false if not.
-   */
-  isMixedHTTPSRequest: function WCU_isMixedHTTPSRequest(aRequest, aLocation)
-  {
-    try {
-      let requestURI = Services.io.newURI(aRequest, null, null);
-      let contentURI = Services.io.newURI(aLocation, null, null);
-      return (contentURI.scheme == "https" && requestURI.scheme != "https");
-    }
-    catch (ex) {
-      return false;
-    }
-  },
-
-  /**
-   * Helper function to deduce the name of the provided function.
-   *
-   * @param function aFunction
-   *        The function whose name will be returned.
-   * @return string
-   *         Function name.
-   */
-  getFunctionName: function WCF_getFunctionName(aFunction)
-  {
-    let name = null;
-    if (aFunction.name) {
-      name = aFunction.name;
-    }
-    else {
-      let desc;
-      try {
-        desc = aFunction.getOwnPropertyDescriptor("displayName");
-      }
-      catch (ex) { }
-      if (desc && typeof desc.value == "string") {
-        name = desc.value;
-      }
-    }
-    if (!name) {
-      try {
-        let str = (aFunction.toString() || aFunction.toSource()) + "";
-        name = (str.match(REGEX_MATCH_FUNCTION_NAME) || [])[1];
-      }
-      catch (ex) { }
-    }
-    return name;
-  },
-
-  /**
-   * Get the object class name. For example, the |window| object has the Window
-   * class name (based on [object Window]).
-   *
-   * @param object aObject
-   *        The object you want to get the class name for.
-   * @return string
-   *         The object class name.
-   */
-  getObjectClassName: function WCU_getObjectClassName(aObject)
-  {
-    if (aObject === null) {
-      return "null";
-    }
-    if (aObject === undefined) {
-      return "undefined";
-    }
-
-    let type = typeof aObject;
-    if (type != "object") {
-      // Grip class names should start with an uppercase letter.
-      return type.charAt(0).toUpperCase() + type.substr(1);
-    }
-
-    let className;
-
-    try {
-      className = ((aObject + "").match(/^\[object (\S+)\]$/) || [])[1];
-      if (!className) {
-        className = ((aObject.constructor + "").match(/^\[object (\S+)\]$/) || [])[1];
-      }
-      if (!className && typeof aObject.constructor == "function") {
-        className = this.getFunctionName(aObject.constructor);
-      }
-    }
-    catch (ex) { }
-
-    return className;
-  },
-
-  /**
-   * Check if the given value is a grip with an actor.
-   *
-   * @param mixed aGrip
-   *        Value you want to check if it is a grip with an actor.
-   * @return boolean
-   *         True if the given value is a grip with an actor.
-   */
-  isActorGrip: function WCU_isActorGrip(aGrip)
-  {
-    return aGrip && typeof(aGrip) == "object" && aGrip.actor;
-  },
-  /**
-   * Value of devtools.selfxss.count preference
-   *
-   * @type number
-   * @private
-   */
-  _usageCount: 0,
-  get usageCount() {
-    if (WebConsoleUtils._usageCount < CONSOLE_ENTRY_THRESHOLD) {
-      WebConsoleUtils._usageCount = Services.prefs.getIntPref("devtools.selfxss.count");
-      if (Services.prefs.getBoolPref("devtools.chrome.enabled")) {
-        WebConsoleUtils.usageCount = CONSOLE_ENTRY_THRESHOLD;
-      }
-    }
-    return WebConsoleUtils._usageCount;
-  },
-  set usageCount(newUC) {
-    if (newUC <= CONSOLE_ENTRY_THRESHOLD) {
-      WebConsoleUtils._usageCount = newUC;
-      Services.prefs.setIntPref("devtools.selfxss.count", newUC);
-    }
-  },
-  /**
-   * The inputNode "paste" event handler generator. Helps prevent self-xss attacks
-   *
-   * @param nsIDOMElement inputField
-   * @param nsIDOMElement notificationBox
-   * @returns A function to be added as a handler to 'paste' and 'drop' events on the input field
-   */
-  pasteHandlerGen: function WCU_pasteHandlerGen(inputField, notificationBox, msg, okstring) {
-    let handler = function WCU_pasteHandler(aEvent) {
-      if (WebConsoleUtils.usageCount >= CONSOLE_ENTRY_THRESHOLD) {
-        inputField.removeEventListener("paste", handler);
-        inputField.removeEventListener("drop", handler);
-        return true;
-      }
-      if (notificationBox.getNotificationWithValue("selfxss-notification")) {
-        aEvent.preventDefault();
-        aEvent.stopPropagation();
-        return false;
-      }
-
-
-      let notification = notificationBox.appendNotification(msg,
-        "selfxss-notification", null, notificationBox.PRIORITY_WARNING_HIGH, null,
-        function(eventType) {
-          // Cleanup function if notification is dismissed
-          if (eventType == "removed") {
-            inputField.removeEventListener("keyup", pasteKeyUpHandler);
-          }
-        });
-
-      function pasteKeyUpHandler(aEvent2) {
-        let value = inputField.value || inputField.textContent;
-        if (value.includes(okstring)) {
-          notificationBox.removeNotification(notification);
-          inputField.removeEventListener("keyup", pasteKeyUpHandler);
-          WebConsoleUtils.usageCount = CONSOLE_ENTRY_THRESHOLD;
-        }
-      }
-      inputField.addEventListener("keyup", pasteKeyUpHandler);
-
-      aEvent.preventDefault();
-      aEvent.stopPropagation();
-      return false;
-    };
-    return handler;
-  },
-
-
 };
 
-exports.Utils = WebConsoleUtils;
+//  exports.Utils = WebConsoleUtils;
 
-//////////////////////////////////////////////////////////////////////////
-// Localization
-//////////////////////////////////////////////////////////////////////////
-
-WebConsoleUtils.l10n = function WCU_l10n(aBundleURI)
-{
-  this._bundleUri = aBundleURI;
-};
-
-WebConsoleUtils.l10n.prototype = {
-  _stringBundle: null,
-
-  get stringBundle()
-  {
-    if (!this._stringBundle) {
-      this._stringBundle = Services.strings.createBundle(this._bundleUri);
-    }
-    return this._stringBundle;
-  },
-
-  /**
-   * Generates a formatted timestamp string for displaying in console messages.
-   *
-   * @param integer [aMilliseconds]
-   *        Optional, allows you to specify the timestamp in milliseconds since
-   *        the UNIX epoch.
-   * @return string
-   *         The timestamp formatted for display.
-   */
-  timestampString: function WCU_l10n_timestampString(aMilliseconds)
-  {
-    let d = new Date(aMilliseconds ? aMilliseconds : null);
-    let hours = d.getHours(), minutes = d.getMinutes();
-    let seconds = d.getSeconds(), milliseconds = d.getMilliseconds();
-    let parameters = [hours, minutes, seconds, milliseconds];
-    return this.getFormatStr("timestampFormat", parameters);
-  },
-
-  /**
-   * Retrieve a localized string.
-   *
-   * @param string aName
-   *        The string name you want from the Web Console string bundle.
-   * @return string
-   *         The localized string.
-   */
-  getStr: function WCU_l10n_getStr(aName)
-  {
-    let result;
-    try {
-      result = this.stringBundle.GetStringFromName(aName);
-    }
-    catch (ex) {
-      Cu.reportError("Failed to get string: " + aName);
-      throw ex;
-    }
-    return result;
-  },
-
-  /**
-   * Retrieve a localized string formatted with values coming from the given
-   * array.
-   *
-   * @param string aName
-   *        The string name you want from the Web Console string bundle.
-   * @param array aArray
-   *        The array of values you want in the formatted string.
-   * @return string
-   *         The formatted local string.
-   */
-  getFormatStr: function WCU_l10n_getFormatStr(aName, aArray)
-  {
-    let result;
-    try {
-      result = this.stringBundle.formatStringFromName(aName, aArray, aArray.length);
-    }
-    catch (ex) {
-      Cu.reportError("Failed to format string: " + aName);
-      throw ex;
-    }
-    return result;
-  },
-};
-
-
-//////////////////////////////////////////////////////////////////////////
-// JS Completer
-//////////////////////////////////////////////////////////////////////////
-
-(function _JSPP(WCU) {
-const STATE_NORMAL = 0;
-const STATE_QUOTE = 2;
-const STATE_DQUOTE = 3;
-
-const OPEN_BODY = "{[(".split("");
-const CLOSE_BODY = "}])".split("");
-const OPEN_CLOSE_BODY = {
-  "{": "}",
-  "[": "]",
-  "(": ")",
-};
-
-/**
- * Analyses a given string to find the last statement that is interesting for
- * later completion.
- *
- * @param   string aStr
- *          A string to analyse.
- *
- * @returns object
- *          If there was an error in the string detected, then a object like
- *
- *            { err: "ErrorMesssage" }
- *
- *          is returned, otherwise a object like
- *
- *            {
- *              state: STATE_NORMAL|STATE_QUOTE|STATE_DQUOTE,
- *              startPos: index of where the last statement begins
- *            }
- */
-function findCompletionBeginning(aStr)
-{
-  let bodyStack = [];
-
-  let state = STATE_NORMAL;
-  let start = 0;
-  let c;
-  for (let i = 0; i < aStr.length; i++) {
-    c = aStr[i];
-
-    switch (state) {
-      // Normal JS state.
-      case STATE_NORMAL:
-        if (c == '"') {
-          state = STATE_DQUOTE;
-        }
-        else if (c == "'") {
-          state = STATE_QUOTE;
-        }
-        else if (c == ";") {
-          start = i + 1;
-        }
-        else if (c == " ") {
-          start = i + 1;
-        }
-        else if (OPEN_BODY.indexOf(c) != -1) {
-          bodyStack.push({
-            token: c,
-            start: start
-          });
-          start = i + 1;
-        }
-        else if (CLOSE_BODY.indexOf(c) != -1) {
-          var last = bodyStack.pop();
-          if (!last || OPEN_CLOSE_BODY[last.token] != c) {
-            return {
-              err: "syntax error"
-            };
-          }
-          if (c == "}") {
-            start = i + 1;
-          }
-          else {
-            start = last.start;
-          }
-        }
-        break;
-
-      // Double quote state > " <
-      case STATE_DQUOTE:
-        if (c == "\\") {
-          i++;
-        }
-        else if (c == "\n") {
-          return {
-            err: "unterminated string literal"
-          };
-        }
-        else if (c == '"') {
-          state = STATE_NORMAL;
-        }
-        break;
-
-      // Single quote state > ' <
-      case STATE_QUOTE:
-        if (c == "\\") {
-          i++;
-        }
-        else if (c == "\n") {
-          return {
-            err: "unterminated string literal"
-          };
-        }
-        else if (c == "'") {
-          state = STATE_NORMAL;
-        }
-        break;
-    }
-  }
-
-  return {
-    state: state,
-    startPos: start
-  };
-}
-
-/**
- * Provides a list of properties, that are possible matches based on the passed
- * Debugger.Environment/Debugger.Object and inputValue.
- *
- * @param object aDbgObject
- *        When the debugger is not paused this Debugger.Object wraps the scope for autocompletion.
- *        It is null if the debugger is paused.
- * @param object anEnvironment
- *        When the debugger is paused this Debugger.Environment is the scope for autocompletion.
- *        It is null if the debugger is not paused.
- * @param string aInputValue
- *        Value that should be completed.
- * @param number [aCursor=aInputValue.length]
- *        Optional offset in the input where the cursor is located. If this is
- *        omitted then the cursor is assumed to be at the end of the input
- *        value.
- * @returns null or object
- *          If no completion valued could be computed, null is returned,
- *          otherwise a object with the following form is returned:
- *            {
- *              matches: [ string, string, string ],
- *              matchProp: Last part of the inputValue that was used to find
- *                         the matches-strings.
- *            }
- */
-function JSPropertyProvider(aDbgObject, anEnvironment, aInputValue, aCursor)
-{
-  if (aCursor === undefined) {
-    aCursor = aInputValue.length;
-  }
-
-  let inputValue = aInputValue.substring(0, aCursor);
-
-  // Analyse the inputValue and find the beginning of the last part that
-  // should be completed.
-  let beginning = findCompletionBeginning(inputValue);
-
-  // There was an error analysing the string.
-  if (beginning.err) {
-    return null;
-  }
-
-  // If the current state is not STATE_NORMAL, then we are inside of an string
-  // which means that no completion is possible.
-  if (beginning.state != STATE_NORMAL) {
-    return null;
-  }
-
-  let completionPart = inputValue.substring(beginning.startPos);
-
-  // Don't complete on just an empty string.
-  if (completionPart.trim() == "") {
-    return null;
-  }
-
-  let lastDot = completionPart.lastIndexOf(".");
-  if (lastDot > 0 &&
-      (completionPart[0] == "'" || completionPart[0] == '"') &&
-      completionPart[lastDot - 1] == completionPart[0]) {
-    // We are completing a string literal.
-    let matchProp = completionPart.slice(lastDot + 1);
-    return getMatchedProps(String.prototype, matchProp);
-  }
-
-  // We are completing a variable / a property lookup.
-  let properties = completionPart.split(".");
-  let matchProp = properties.pop().trimLeft();
-  let obj = aDbgObject;
-
-  // The first property must be found in the environment if the debugger is
-  // paused.
-  if (anEnvironment) {
-    if (properties.length == 0) {
-      return getMatchedPropsInEnvironment(anEnvironment, matchProp);
-    }
-    obj = getVariableInEnvironment(anEnvironment, properties.shift());
-  }
-
-  if (!isObjectUsable(obj)) {
-    return null;
-  }
-
-  // We get the rest of the properties recursively starting from the Debugger.Object
-  // that wraps the first property
-  for (let prop of properties) {
-    prop = prop.trim();
-    if (!prop) {
-      return null;
-    }
-
-    if (/\[\d+\]$/.test(prop)) {
-      // The property to autocomplete is a member of array. For example
-      // list[i][j]..[n]. Traverse the array to get the actual element.
-      obj = getArrayMemberProperty(obj, prop);
-    }
-    else {
-      obj = DevToolsUtils.getProperty(obj, prop);
-    }
-
-    if (!isObjectUsable(obj)) {
-      return null;
-    }
-  }
-
-  // If the final property is a primitive
-  if (typeof obj != "object") {
-    return getMatchedProps(obj, matchProp);
-  }
-
-  return getMatchedPropsInDbgObject(obj, matchProp);
-}
-
-/**
- * Get the array member of aObj for the given aProp. For example, given
- * aProp='list[0][1]' the element at [0][1] of aObj.list is returned.
- *
- * @param object aObj
- *        The object to operate on.
- * @param string aProp
- *        The property to return.
- * @return null or Object
- *         Returns null if the property couldn't be located. Otherwise the array
- *         member identified by aProp.
- */
-function getArrayMemberProperty(aObj, aProp)
-{
-  // First get the array.
-  let obj = aObj;
-  let propWithoutIndices = aProp.substr(0, aProp.indexOf("["));
-  obj = DevToolsUtils.getProperty(obj, propWithoutIndices);
-  if (!isObjectUsable(obj)) {
-    return null;
-  }
-
-  // Then traverse the list of indices to get the actual element.
-  let result;
-  let arrayIndicesRegex = /\[[^\]]*\]/g;
-  while ((result = arrayIndicesRegex.exec(aProp)) !== null) {
-    let indexWithBrackets = result[0];
-    let indexAsText = indexWithBrackets.substr(1, indexWithBrackets.length - 2);
-    let index = parseInt(indexAsText);
-
-    if (isNaN(index)) {
-      return null;
-    }
-
-    obj = DevToolsUtils.getProperty(obj, index);
-
-    if (!isObjectUsable(obj)) {
-      return null;
-    }
-  }
-
-  return obj;
-}
-
-/**
- * Check if the given Debugger.Object can be used for autocomplete.
- *
- * @param Debugger.Object aObject
- *        The Debugger.Object to check.
- * @return boolean
- *         True if further inspection into the object is possible, or false
- *         otherwise.
- */
-function isObjectUsable(aObject)
-{
-  if (aObject == null) {
-    return false;
-  }
-
-  if (typeof aObject == "object" && aObject.class == "DeadObject") {
-    return false;
-  }
-
-  return true;
-}
-
-/**
- * @see getExactMatch_impl()
- */
-function getVariableInEnvironment(anEnvironment, aName)
-{
-  return getExactMatch_impl(anEnvironment, aName, DebuggerEnvironmentSupport);
-}
-
-/**
- * @see getMatchedProps_impl()
- */
-function getMatchedPropsInEnvironment(anEnvironment, aMatch)
-{
-  return getMatchedProps_impl(anEnvironment, aMatch, DebuggerEnvironmentSupport);
-}
-
-/**
- * @see getMatchedProps_impl()
- */
-function getMatchedPropsInDbgObject(aDbgObject, aMatch)
-{
-  return getMatchedProps_impl(aDbgObject, aMatch, DebuggerObjectSupport);
-}
-
-/**
- * @see getMatchedProps_impl()
- */
-function getMatchedProps(aObj, aMatch)
-{
-  if (typeof aObj != "object") {
-    aObj = aObj.constructor.prototype;
-  }
-  return getMatchedProps_impl(aObj, aMatch, JSObjectSupport);
-}
-
-/**
- * Get all properties in the given object (and its parent prototype chain) that
- * match a given prefix.
- *
- * @param mixed aObj
- *        Object whose properties we want to filter.
- * @param string aMatch
- *        Filter for properties that match this string.
- * @return object
- *         Object that contains the matchProp and the list of names.
- */
-function getMatchedProps_impl(aObj, aMatch, {chainIterator, getProperties})
-{
-  let matches = new Set();
-  let numProps = 0;
-
-  // We need to go up the prototype chain.
-  let iter = chainIterator(aObj);
-  for (let obj of iter) {
-    let props = getProperties(obj);
-    numProps += props.length;
-
-    // If there are too many properties to event attempt autocompletion,
-    // or if we have already added the max number, then stop looping
-    // and return the partial set that has already been discovered.
-    if (numProps >= MAX_AUTOCOMPLETE_ATTEMPTS ||
-        matches.size >= MAX_AUTOCOMPLETIONS) {
-      break;
-    }
-
-    for (let i = 0; i < props.length; i++) {
-      let prop = props[i];
-      if (prop.indexOf(aMatch) != 0) {
-        continue;
-      }
-      if (prop.indexOf('-') > -1) {
-        continue;
-      }
-      // If it is an array index, we can't take it.
-      // This uses a trick: converting a string to a number yields NaN if
-      // the operation failed, and NaN is not equal to itself.
-      if (+prop != +prop) {
-        matches.add(prop);
-      }
-
-      if (matches.size >= MAX_AUTOCOMPLETIONS) {
-        break;
-      }
-    }
-  }
-
-  return {
-    matchProp: aMatch,
-    matches: [...matches],
-  };
-}
-
-/**
- * Returns a property value based on its name from the given object, by
- * recursively checking the object's prototype.
- *
- * @param object aObj
- *        An object to look the property into.
- * @param string aName
- *        The property that is looked up.
- * @returns object|undefined
- *        A Debugger.Object if the property exists in the object's prototype
- *        chain, undefined otherwise.
- */
-function getExactMatch_impl(aObj, aName, {chainIterator, getProperty})
-{
-  // We need to go up the prototype chain.
-  let iter = chainIterator(aObj);
-  for (let obj of iter) {
-    let prop = getProperty(obj, aName, aObj);
-    if (prop) {
-      return prop.value;
-    }
-  }
-  return undefined;
-}
-
-
-var JSObjectSupport = {
-  chainIterator: function*(aObj)
-  {
-    while (aObj) {
-      yield aObj;
-      aObj = Object.getPrototypeOf(aObj);
-    }
-  },
-
-  getProperties: function(aObj)
-  {
-    return Object.getOwnPropertyNames(aObj);
-  },
-
-  getProperty: function()
-  {
-    // getProperty is unsafe with raw JS objects.
-    throw "Unimplemented!";
-  },
-};
-
-var DebuggerObjectSupport = {
-  chainIterator: function*(aObj)
-  {
-    while (aObj) {
-      yield aObj;
-      aObj = aObj.proto;
-    }
-  },
-
-  getProperties: function(aObj)
-  {
-    return aObj.getOwnPropertyNames();
-  },
-
-  getProperty: function(aObj, aName, aRootObj)
-  {
-    // This is left unimplemented in favor to DevToolsUtils.getProperty().
-    throw "Unimplemented!";
-  },
-};
-
-var DebuggerEnvironmentSupport = {
-  chainIterator: function*(aObj)
-  {
-    while (aObj) {
-      yield aObj;
-      aObj = aObj.parent;
-    }
-  },
-
-  getProperties: function(aObj)
-  {
-    return aObj.names();
-  },
-
-  getProperty: function(aObj, aName)
-  {
-    // TODO: we should use getVariableDescriptor() here - bug 725815.
-    let result = aObj.getVariable(aName);
-    // FIXME: Need actual UI, bug 941287.
-    if (result === undefined || result.optimizedOut || result.missingArguments) {
-      return null;
-    }
-    return { value: result };
-  },
-};
-
-
-exports.JSPropertyProvider = DevToolsUtils.makeInfallible(JSPropertyProvider);
-})(WebConsoleUtils);
-
-///////////////////////////////////////////////////////////////////////////////
 // The page errors listener
-///////////////////////////////////////////////////////////////////////////////
 
 /**
  * The nsIConsoleService listener. This is used to send all of the console
  * messages (JavaScript, CSS and more) to the remote Web Console instance.
  *
  * @constructor
- * @param nsIDOMWindow [aWindow]
+ * @param nsIDOMWindow [window]
  *        Optional - the window object for which we are created. This is used
  *        for filtering out messages that belong to other windows.
- * @param object aListener
+ * @param object listener
  *        The listener object must have one method:
  *        - onConsoleServiceMessage(). This method is invoked with one argument,
  *        the nsIConsoleMessage, whenever a relevant message is received.
  */
-function ConsoleServiceListener(aWindow, aListener)
-{
-  this.window = aWindow;
-  this.listener = aListener;
+function ConsoleServiceListener(window, listener) {
+  this.window = window;
+  this.listener = listener;
 }
-exports.ConsoleServiceListener = ConsoleServiceListener;
+//  exports.ConsoleServiceListener = ConsoleServiceListener;
 
 ConsoleServiceListener.prototype =
 {
-  // QueryInterface: XPCOMUtils.generateQI([Ci.nsIConsoleListener]),
+//  QueryInterface: XPCOMUtils.generateQI([Ci.nsIConsoleListener]),
 
   /**
    * The content window for which we listen to page errors.
@@ -1227,8 +245,7 @@ ConsoleServiceListener.prototype =
   /**
    * Initialize the nsIConsoleService listener.
    */
-  init: function CSL_init()
-  {
+  init: function () {
     Services.console.registerListener(this);
   },
 
@@ -1237,47 +254,45 @@ ConsoleServiceListener.prototype =
    * messages belonging to the current window and sends them to the remote Web
    * Console instance.
    *
-   * @param nsIConsoleMessage aMessage
+   * @param nsIConsoleMessage message
    *        The message object coming from the nsIConsoleService.
    */
-  observe: function CSL_observe(aMessage)
-  {
+  observe: function (message) {
     if (!this.listener) {
       return;
     }
 
     if (this.window) {
-      if (!(aMessage instanceof Ci.nsIScriptError) ||
-          !aMessage.outerWindowID ||
-          !this.isCategoryAllowed(aMessage.category)) {
+      if (!(message instanceof Ci.nsIScriptError) ||
+          !message.outerWindowID ||
+          !this.isCategoryAllowed(message.category)) {
         return;
       }
 
-      let errorWindow = Services.wm.getOuterWindowWithId(aMessage .outerWindowID);
+      let errorWindow = Services.wm.getOuterWindowWithId(message.outerWindowID);
       if (!errorWindow || !isWindowIncluded(this.window, errorWindow)) {
         return;
       }
     }
 
-    this.listener.onConsoleServiceMessage(aMessage);
+    this.listener.onConsoleServiceMessage(message);
   },
 
   /**
    * Check if the given message category is allowed to be tracked or not.
    * We ignore chrome-originating errors as we only care about content.
    *
-   * @param string aCategory
+   * @param string category
    *        The message category you want to check.
    * @return boolean
    *         True if the category is allowed to be logged, false otherwise.
    */
-  isCategoryAllowed: function CSL_isCategoryAllowed(aCategory)
-  {
-    if (!aCategory) {
+  isCategoryAllowed: function (category) {
+    if (!category) {
       return false;
     }
 
-    switch (aCategory) {
+    switch (category) {
       case "XPConnect JavaScript":
       case "component javascript":
       case "chrome javascript":
@@ -1295,23 +310,22 @@ ConsoleServiceListener.prototype =
   /**
    * Get the cached page errors for the current inner window and its (i)frames.
    *
-   * @param boolean [aIncludePrivate=false]
+   * @param boolean [includePrivate=false]
    *        Tells if you want to also retrieve messages coming from private
    *        windows. Defaults to false.
    * @return array
    *         The array of cached messages. Each element is an nsIScriptError or
    *         an nsIConsoleMessage
    */
-  getCachedMessages: function CSL_getCachedMessages(aIncludePrivate = false)
-  {
+  getCachedMessages: function (includePrivate = false) {
     let errors = Services.console.getMessageArray() || [];
 
     // if !this.window, we're in a browser console. Still need to filter
     // private messages.
     if (!this.window) {
-      return errors.filter((aError) => {
-        if (aError instanceof Ci.nsIScriptError) {
-          if (!aIncludePrivate && aError.isFromPrivateWindow) {
+      return errors.filter((error) => {
+        if (error instanceof Ci.nsIScriptError) {
+          if (!includePrivate && error.isFromPrivateWindow) {
             return false;
           }
         }
@@ -1322,18 +336,17 @@ ConsoleServiceListener.prototype =
 
     let ids = WebConsoleUtils.getInnerWindowIDsForFrames(this.window);
 
-    return errors.filter((aError) => {
-      if (aError instanceof Ci.nsIScriptError) {
-        if (!aIncludePrivate && aError.isFromPrivateWindow) {
+    return errors.filter((error) => {
+      if (error instanceof Ci.nsIScriptError) {
+        if (!includePrivate && error.isFromPrivateWindow) {
           return false;
         }
         if (ids &&
-            (ids.indexOf(aError.innerWindowID) == -1 ||
-             !this.isCategoryAllowed(aError.category))) {
+            (ids.indexOf(error.innerWindowID) == -1 ||
+             !this.isCategoryAllowed(error.category))) {
           return false;
         }
-      }
-      else if (ids && ids[0]) {
+      } else if (ids && ids[0]) {
         // If this is not an nsIScriptError and we need to do window-based
         // filtering we skip this message.
         return false;
@@ -1346,45 +359,41 @@ ConsoleServiceListener.prototype =
   /**
    * Remove the nsIConsoleService listener.
    */
-  destroy: function CSL_destroy()
-  {
+  destroy: function () {
     Services.console.unregisterListener(this);
     this.listener = this.window = null;
   },
 };
 
-
-///////////////////////////////////////////////////////////////////////////////
 // The window.console API observer
-///////////////////////////////////////////////////////////////////////////////
 
 /**
  * The window.console API observer. This allows the window.console API messages
  * to be sent to the remote Web Console instance.
  *
  * @constructor
- * @param nsIDOMWindow aWindow
+ * @param nsIDOMWindow window
  *        Optional - the window object for which we are created. This is used
  *        for filtering out messages that belong to other windows.
- * @param object aOwner
+ * @param object owner
  *        The owner object must have the following methods:
  *        - onConsoleAPICall(). This method is invoked with one argument, the
  *        Console API message that comes from the observer service, whenever
  *        a relevant console API call is received.
- * @param string aConsoleID
- *        Options - The consoleID that this listener should listen to
+ * @param object filteringOptions
+ *        Optional - The filteringOptions that this listener should listen to:
+ *        - addonId: filter console messages based on the addonId.
  */
-function ConsoleAPIListener(aWindow, aOwner, aConsoleID)
-{
-  this.window = aWindow;
-  this.owner = aOwner;
-  this.consoleID = aConsoleID;
+function ConsoleAPIListener(window, owner, {addonId} = {}) {
+  this.window = window;
+  this.owner = owner;
+  this.addonId = addonId;
 }
-exports.ConsoleAPIListener = ConsoleAPIListener;
+//  exports.ConsoleAPIListener = ConsoleAPIListener;
 
 ConsoleAPIListener.prototype =
 {
-  // QueryInterface: XPCOMUtils.generateQI([Ci.nsIObserver]),
+//  QueryInterface: XPCOMUtils.generateQI([Ci.nsIObserver]),
 
   /**
    * The content window for which we listen to window.console API calls.
@@ -1403,32 +412,30 @@ ConsoleAPIListener.prototype =
   owner: null,
 
   /**
-   * The consoleID that we listen for. If not null then only messages from this
+   * The addonId that we listen for. If not null then only messages from this
    * console will be returned.
    */
-  consoleID: null,
+  addonId: null,
 
   /**
    * Initialize the window.console API observer.
    */
-  init: function CAL_init()
-  {
+  init: function () {
     // Note that the observer is process-wide. We will filter the messages as
     // needed, see CAL_observe().
-    // Services.obs.addObserver(this, "console-api-log-event", false);
+//    Services.obs.addObserver(this, "console-api-log-event", false);
   },
 
   /**
    * The console API message observer. When messages are received from the
    * observer service we forward them to the remote Web Console instance.
    *
-   * @param object aMessage
+   * @param object message
    *        The message object receives from the observer service.
-   * @param string aTopic
+   * @param string topic
    *        The message topic received from the observer service.
    */
-  observe: function CAL_observe(aMessage, aTopic)
-  {
+  observe: function (message, topic) {
     if (!this.owner) {
       return;
     }
@@ -1436,15 +443,9 @@ ConsoleAPIListener.prototype =
     // Here, wrappedJSObject is not a security wrapper but a property defined
     // by the XPCOM component which allows us to unwrap the XPCOM interface and
     // access the underlying JSObject.
-    let apiMessage = aMessage.wrappedJSObject;
-    if (this.window && CONSOLE_WORKER_IDS.indexOf(apiMessage.innerID) == -1) {
-      let msgWindow = Services.wm.getCurrentInnerWindowWithId(apiMessage.innerID);
-      if (!msgWindow || !isWindowIncluded(this.window, msgWindow)) {
-        // Not the same window!
-        return;
-      }
-    }
-    if (this.consoleID && apiMessage.consoleID != this.consoleID) {
+    let apiMessage = message.wrappedJSObject;
+
+    if (!this.isMessageRelevant(apiMessage)) {
       return;
     }
 
@@ -1452,40 +453,95 @@ ConsoleAPIListener.prototype =
   },
 
   /**
+   * Given a message, return true if this window should show it and false
+   * if it should be ignored.
+   *
+   * @param message
+   *        The message from the Storage Service
+   * @return bool
+   *         Do we care about this message?
+   */
+  isMessageRelevant: function (message) {
+    let workerType = WebConsoleUtils.getWorkerType(message);
+
+    if (this.window && workerType === "ServiceWorker") {
+      // For messages from Service Workers, message.ID is the
+      // scope, which can be used to determine whether it's controlling
+      // a window.
+      let scope = message.ID;
+
+      if (!swm.shouldReportToWindow(this.window, scope)) {
+        return false;
+      }
+    }
+
+    if (this.window && !workerType) {
+      let msgWindow = Services.wm.getCurrentInnerWindowWithId(message.innerID);
+      if (!msgWindow || !isWindowIncluded(this.window, msgWindow)) {
+        // Not the same window!
+        return false;
+      }
+    }
+
+    if (this.addonId) {
+      // ConsoleAPI.jsm messages contains a consoleID, (and it is currently
+      // used in Addon SDK add-ons), the standard 'console' object
+      // (which is used in regular webpages and in WebExtensions pages)
+      // contains the originAttributes of the source document principal.
+
+      // Filtering based on the originAttributes used by
+      // the Console API object.
+      if (message.originAttributes &&
+          message.originAttributes.addonId == this.addonId) {
+        return true;
+      }
+
+      // Filtering based on the old-style consoleID property used by
+      // the legacy Console JSM module.
+      if (message.consoleID && message.consoleID == `addon/${this.addonId}`) {
+        return true;
+      }
+
+      return false;
+    }
+
+    return true;
+  },
+
+  /**
    * Get the cached messages for the current inner window and its (i)frames.
    *
-   * @param boolean [aIncludePrivate=false]
+   * @param boolean [includePrivate=false]
    *        Tells if you want to also retrieve messages coming from private
    *        windows. Defaults to false.
    * @return array
    *         The array of cached messages.
    */
-  getCachedMessages: function CAL_getCachedMessages(aIncludePrivate = false)
-  {
+  getCachedMessages: function (includePrivate = false) {
     let messages = [];
-    // let ConsoleAPIStorage = Cc["@mozilla.org/consoleAPI-storage;1"]
-    //                           .getService(Ci.nsIConsoleAPIStorage);
+//    let ConsoleAPIStorage = Cc["@mozilla.org/consoleAPI-storage;1"]
+//                              .getService(Ci.nsIConsoleAPIStorage);
 
-    // // if !this.window, we're in a browser console. Retrieve all events
-    // // for filtering based on privacy.
-    // if (!this.window) {
-    //   messages = ConsoleAPIStorage.getEvents();
-    // } else {
-    //   let ids = WebConsoleUtils.getInnerWindowIDsForFrames(this.window);
-    //   ids.forEach((id) => {
-    //     messages = messages.concat(ConsoleAPIStorage.getEvents(id));
-    //   });
-    // }
+    // if !this.window, we're in a browser console. Retrieve all events
+    // for filtering based on privacy.
+//    if (!this.window) {
+//      messages = ConsoleAPIStorage.getEvents();
+//    } else {
+//      let ids = WebConsoleUtils.getInnerWindowIDsForFrames(this.window);
+//      ids.forEach((id) => {
+//        messages = messages.concat(ConsoleAPIStorage.getEvents(id));
+//      });
+//    }
+//
+//    CONSOLE_WORKER_IDS.forEach((id) => {
+//      messages = messages.concat(ConsoleAPIStorage.getEvents(id));
+//    });
 
-    // CONSOLE_WORKER_IDS.forEach((id) => {
-    //   messages = messages.concat(ConsoleAPIStorage.getEvents(id));
-    // });
+    messages = messages.filter(msg => {
+      return this.isMessageRelevant(msg);
+    });
 
-    if (this.consoleID) {
-      messages = messages.filter((m) => m.consoleID == this.consoleID);
-    }
-
-    if (aIncludePrivate) {
+    if (includePrivate) {
       return messages;
     }
 
@@ -1495,9 +551,8 @@ ConsoleAPIListener.prototype =
   /**
    * Destroy the console API listener.
    */
-  destroy: function CAL_destroy()
-  {
-    Services.obs.removeObserver(this, "console-api-log-event");
+  destroy: function () {
+//    Services.obs.removeObserver(this, "console-api-log-event");
     this.window = this.owner = null;
   },
 };
@@ -1527,7 +582,7 @@ var WebConsoleCommands = {
 
   /**
    * Register a new command.
-   * @param {string} name The command name (example: "$")
+   * @param {string} name The command name (exemple: "$")
    * @param {(function|object)} command The command to register.
    *  It can be a function so the command is a function (like "$()"),
    *  or it can also be a property descriptor to describe a getter / value (like
@@ -1541,18 +596,18 @@ var WebConsoleCommands = {
    *
    * @example
    *
-   *   WebConsoleCommands.register("$", function JSTH_$(aOwner, aSelector)
+   *   WebConsoleCommands.register("$", function JSTH_$(owner, selector)
    *   {
-   *     return aOwner.window.document.querySelector(aSelector);
+   *     return owner.window.document.querySelector(selector);
    *   });
    *
    *   WebConsoleCommands.register("$0", {
-   *     get: function(aOwner) {
-   *       return aOwner.makeDebuggeeValue(aOwner.selectedNode);
+   *     get: function(owner) {
+   *       return owner.makeDebuggeeValue(owner.selectedNode);
    *     }
    *   });
    */
-  register: function(name, command) {
+  register: function (name, command) {
     this._registeredCommands.set(name, command);
   },
 
@@ -1564,7 +619,7 @@ var WebConsoleCommands = {
    *
    * @param {string} name The name of the command
    */
-  unregister: function(name) {
+  unregister: function (name) {
     this._registeredCommands.delete(name);
     if (this._originalCommands.has(name)) {
       this.register(name, this._originalCommands.get(name));
@@ -1578,7 +633,7 @@ var WebConsoleCommands = {
    *
    * @return {(function|object)} The command.
    */
-  getCommand: function(name) {
+  getCommand: function (name) {
     return this._registeredCommands.get(name);
   },
 
@@ -1589,13 +644,12 @@ var WebConsoleCommands = {
    *
    * @return {boolean} True if the command is registered.
    */
-  hasCommand: function(name) {
+  hasCommand: function (name) {
     return this._registeredCommands.has(name);
   },
 };
 
-exports.WebConsoleCommands = WebConsoleCommands;
-
+//  exports.WebConsoleCommands = WebConsoleCommands;
 
 /*
  * Built-in commands.
@@ -1607,31 +661,29 @@ exports.WebConsoleCommands = WebConsoleCommands;
 /**
  * Find a node by ID.
  *
- * @param string aId
+ * @param string id
  *        The ID of the element you want.
  * @return nsIDOMNode or null
- *         The result of calling document.querySelector(aSelector).
+ *         The result of calling document.querySelector(selector).
  */
-WebConsoleCommands._registerOriginal("$", function JSTH_$(aOwner, aSelector)
-{
-  return aOwner.window.document.querySelector(aSelector);
+WebConsoleCommands._registerOriginal("$", function (owner, selector) {
+  return owner.window.document.querySelector(selector);
 });
 
 /**
  * Find the nodes matching a CSS selector.
  *
- * @param string aSelector
+ * @param string selector
  *        A string that is passed to window.document.querySelectorAll.
  * @return nsIDOMNodeList
- *         Returns the result of document.querySelectorAll(aSelector).
+ *         Returns the result of document.querySelectorAll(selector).
  */
-WebConsoleCommands._registerOriginal("$$", function JSTH_$$(aOwner, aSelector)
-{
-  let nodes = aOwner.window.document.querySelectorAll(aSelector);
+WebConsoleCommands._registerOriginal("$$", function (owner, selector) {
+  let nodes = owner.window.document.querySelectorAll(selector);
 
-  // Calling aOwner.window.Array.from() doesn't work without accessing the
+  // Calling owner.window.Array.from() doesn't work without accessing the
   // wrappedJSObject, so just loop through the results instead.
-  let result = new aOwner.window.Array();
+  let result = new owner.window.Array();
   for (let i = 0; i < nodes.length; i++) {
     result.push(nodes[i]);
   }
@@ -1645,31 +697,29 @@ WebConsoleCommands._registerOriginal("$$", function JSTH_$$(aOwner, aSelector)
  * Returns last console evaluation or undefined
  */
 WebConsoleCommands._registerOriginal("$_", {
-  get: function(aOwner) {
-    return aOwner.consoleActor.getLastConsoleInputEvaluation();
+  get: function (owner) {
+    return owner.consoleActor.getLastConsoleInputEvaluation();
   }
 });
-
 
 /**
  * Runs an xPath query and returns all matched nodes.
  *
- * @param string aXPath
+ * @param string xPath
  *        xPath search query to execute.
- * @param [optional] nsIDOMNode aContext
+ * @param [optional] nsIDOMNode context
  *        Context to run the xPath query on. Uses window.document if not set.
  * @return array of nsIDOMNode
  */
-WebConsoleCommands._registerOriginal("$x", function JSTH_$x(aOwner, aXPath, aContext)
-{
-  let nodes = new aOwner.window.Array();
+WebConsoleCommands._registerOriginal("$x", function (owner, xPath, context) {
+  let nodes = new owner.window.Array();
 
   // Not waiving Xrays, since we want the original Document.evaluate function,
   // instead of anything that's been redefined.
-  let doc =  aOwner.window.document;
-  aContext = aContext || doc;
+  let doc = owner.window.document;
+  context = context || doc;
 
-  let results = doc.evaluate(aXPath, aContext, null,
+  let results = doc.evaluate(xPath, context, null,
                              Ci.nsIDOMXPathResult.ANY_TYPE, null);
   let node;
   while ((node = results.iterateNext())) {
@@ -1686,17 +736,16 @@ WebConsoleCommands._registerOriginal("$x", function JSTH_$x(aOwner, aXPath, aCon
  *         Inspector, or null if no selection exists.
  */
 WebConsoleCommands._registerOriginal("$0", {
-  get: function(aOwner) {
-    return aOwner.makeDebuggeeValue(aOwner.selectedNode);
+  get: function (owner) {
+    return owner.makeDebuggeeValue(owner.selectedNode);
   }
 });
 
 /**
  * Clears the output of the WebConsole.
  */
-WebConsoleCommands._registerOriginal("clear", function JSTH_clear(aOwner)
-{
-  aOwner.helperResult = {
+WebConsoleCommands._registerOriginal("clear", function (owner) {
+  owner.helperResult = {
     type: "clearOutput",
   };
 });
@@ -1704,59 +753,55 @@ WebConsoleCommands._registerOriginal("clear", function JSTH_clear(aOwner)
 /**
  * Clears the input history of the WebConsole.
  */
-WebConsoleCommands._registerOriginal("clearHistory", function JSTH_clearHistory(aOwner)
-{
-  aOwner.helperResult = {
+WebConsoleCommands._registerOriginal("clearHistory", function (owner) {
+  owner.helperResult = {
     type: "clearHistory",
   };
 });
 
 /**
- * Returns the result of Object.keys(aObject).
+ * Returns the result of Object.keys(object).
  *
- * @param object aObject
+ * @param object object
  *        Object to return the property names from.
  * @return array of strings
  */
-WebConsoleCommands._registerOriginal("keys", function JSTH_keys(aOwner, aObject)
-{
+WebConsoleCommands._registerOriginal("keys", function (owner, object) {
   // Need to waive Xrays so we can iterate functions and accessor properties
-  return Cu.cloneInto(Object.keys(Cu.waiveXrays(aObject)), aOwner.window);
+  return Cu.cloneInto(Object.keys(Cu.waiveXrays(object)), owner.window);
 });
 
 /**
- * Returns the values of all properties on aObject.
+ * Returns the values of all properties on object.
  *
- * @param object aObject
+ * @param object object
  *        Object to display the values from.
  * @return array of string
  */
-WebConsoleCommands._registerOriginal("values", function JSTH_values(aOwner, aObject)
-{
+WebConsoleCommands._registerOriginal("values", function (owner, object) {
   let values = [];
   // Need to waive Xrays so we can iterate functions and accessor properties
-  let waived = Cu.waiveXrays(aObject);
+  let waived = Cu.waiveXrays(object);
   let names = Object.getOwnPropertyNames(waived);
 
   for (let name of names) {
     values.push(waived[name]);
   }
 
-  return Cu.cloneInto(values, aOwner.window);
+  return Cu.cloneInto(values, owner.window);
 });
 
 /**
  * Opens a help window in MDN.
  */
-WebConsoleCommands._registerOriginal("help", function JSTH_help(aOwner)
-{
-  aOwner.helperResult = { type: "help" };
+WebConsoleCommands._registerOriginal("help", function (owner) {
+  owner.helperResult = { type: "help" };
 });
 
 /**
  * Change the JS evaluation scope.
  *
- * @param DOMElement|string|window aWindow
+ * @param DOMElement|string|window window
  *        The window object to use for eval scope. This can be a string that
  *        is used to perform document.querySelector(), to find the iframe that
  *        you want to cd() to. A DOMElement can be given as well, the
@@ -1764,73 +809,73 @@ WebConsoleCommands._registerOriginal("help", function JSTH_help(aOwner)
  *        a window object. If you call cd() with no arguments, the current
  *        eval scope is cleared back to its default (the top window).
  */
-WebConsoleCommands._registerOriginal("cd", function JSTH_cd(aOwner, aWindow)
-{
-  if (!aWindow) {
-    aOwner.consoleActor.evalWindow = null;
-    aOwner.helperResult = { type: "cd" };
+WebConsoleCommands._registerOriginal("cd", function (owner, window) {
+  if (!window) {
+    owner.consoleActor.evalWindow = null;
+    owner.helperResult = { type: "cd" };
     return;
   }
 
-  if (typeof aWindow == "string") {
-    aWindow = aOwner.window.document.querySelector(aWindow);
+  if (typeof window == "string") {
+    window = owner.window.document.querySelector(window);
   }
-  if (aWindow instanceof Ci.nsIDOMElement && aWindow.contentWindow) {
-    aWindow = aWindow.contentWindow;
+  if (window instanceof Ci.nsIDOMElement && window.contentWindow) {
+    window = window.contentWindow;
   }
-  if (!(aWindow instanceof Ci.nsIDOMWindow)) {
-    aOwner.helperResult = { type: "error", message: "cdFunctionInvalidArgument" };
+  if (!(window instanceof Ci.nsIDOMWindow)) {
+    owner.helperResult = {
+      type: "error",
+      message: "cdFunctionInvalidArgument"
+    };
     return;
   }
 
-  aOwner.consoleActor.evalWindow = aWindow;
-  aOwner.helperResult = { type: "cd" };
+  owner.consoleActor.evalWindow = window;
+  owner.helperResult = { type: "cd" };
 });
 
 /**
- * Inspects the passed aObject. This is done by opening the PropertyPanel.
+ * Inspects the passed object. This is done by opening the PropertyPanel.
  *
- * @param object aObject
+ * @param object object
  *        Object to inspect.
  */
-WebConsoleCommands._registerOriginal("inspect", function JSTH_inspect(aOwner, aObject)
-{
-  let dbgObj = aOwner.makeDebuggeeValue(aObject);
-  let grip = aOwner.createValueGrip(dbgObj);
-  aOwner.helperResult = {
+WebConsoleCommands._registerOriginal("inspect", function (owner, object) {
+  let dbgObj = owner.makeDebuggeeValue(object);
+  let grip = owner.createValueGrip(dbgObj);
+  owner.helperResult = {
     type: "inspectObject",
-    input: aOwner.evalInput,
+    input: owner.evalInput,
     object: grip,
   };
 });
 
 /**
- * Prints aObject to the output.
+ * Prints object to the output.
  *
- * @param object aObject
+ * @param object object
  *        Object to print to the output.
  * @return string
  */
-WebConsoleCommands._registerOriginal("pprint", function JSTH_pprint(aOwner, aObject)
-{
-  if (aObject === null || aObject === undefined || aObject === true ||
-      aObject === false) {
-    aOwner.helperResult = {
+WebConsoleCommands._registerOriginal("pprint", function (owner, object) {
+  if (object === null || object === undefined || object === true ||
+      object === false) {
+    owner.helperResult = {
       type: "error",
       message: "helperFuncUnsupportedTypeError",
     };
     return null;
   }
 
-  aOwner.helperResult = { rawOutput: true };
+  owner.helperResult = { rawOutput: true };
 
-  if (typeof aObject == "function") {
-    return aObject + "\n";
+  if (typeof object == "function") {
+    return object + "\n";
   }
 
   let output = [];
 
-  let obj = aObject;
+  let obj = object;
   for (let name in obj) {
     let desc = WebConsoleUtils.getPropertyDescriptor(obj, name) || {};
     if (desc.get || desc.set) {
@@ -1840,8 +885,7 @@ WebConsoleCommands._registerOriginal("pprint", function JSTH_pprint(aOwner, aObj
       let getString = VariablesView.getString(getGrip);
       let setString = VariablesView.getString(setGrip);
       output.push(name + ":", "  get: " + getString, "  set: " + setString);
-    }
-    else {
+    } else {
       let valueGrip = VariablesView.getGrip(obj[name]);
       let valueString = VariablesView.getString(valueGrip);
       output.push(name + ": " + valueString);
@@ -1854,56 +898,53 @@ WebConsoleCommands._registerOriginal("pprint", function JSTH_pprint(aOwner, aObj
 /**
  * Print the String representation of a value to the output, as-is.
  *
- * @param any aValue
+ * @param any value
  *        A value you want to output as a string.
  * @return void
  */
-WebConsoleCommands._registerOriginal("print", function JSTH_print(aOwner, aValue)
-{
-  aOwner.helperResult = { rawOutput: true };
-  if (typeof aValue === "symbol") {
-    return Symbol.prototype.toString.call(aValue);
+WebConsoleCommands._registerOriginal("print", function (owner, value) {
+  owner.helperResult = { rawOutput: true };
+  if (typeof value === "symbol") {
+    return Symbol.prototype.toString.call(value);
   }
   // Waiving Xrays here allows us to see a closer representation of the
   // underlying object. This may execute arbitrary content code, but that
   // code will run with content privileges, and the result will be rendered
   // inert by coercing it to a String.
-  return String(Cu.waiveXrays(aValue));
+  return String(Cu.waiveXrays(value));
 });
 
 /**
  * Copy the String representation of a value to the clipboard.
  *
- * @param any aValue
+ * @param any value
  *        A value you want to copy as a string.
  * @return void
  */
-WebConsoleCommands._registerOriginal("copy", function JSTH_copy(aOwner, aValue)
-{
+WebConsoleCommands._registerOriginal("copy", function (owner, value) {
   let payload;
   try {
-    if (aValue instanceof Ci.nsIDOMElement) {
-      payload = aValue.outerHTML;
-    } else if (typeof aValue == "string") {
-      payload = aValue;
+    if (value instanceof Ci.nsIDOMElement) {
+      payload = value.outerHTML;
+    } else if (typeof value == "string") {
+      payload = value;
     } else {
-      payload = JSON.stringify(aValue, null, "  ");
+      payload = JSON.stringify(value, null, "  ");
     }
   } catch (ex) {
-    payload = "/* " + ex  + " */";
+    payload = "/* " + ex + " */";
   }
-  aOwner.helperResult = {
+  owner.helperResult = {
     type: "copyValueToClipboard",
     value: payload,
   };
 });
 
-
 /**
  * (Internal only) Add the bindings to |owner.sandbox|.
  * This is intended to be used by the WebConsole actor only.
   *
-  * @param object aOwner
+  * @param object owner
   *        The owning object.
   */
 function addWebConsoleCommands(owner) {
@@ -1913,21 +954,13 @@ function addWebConsoleCommands(owner) {
   for (let [name, command] of WebConsoleCommands._registeredCommands) {
     if (typeof command === "function") {
       owner.sandbox[name] = command.bind(undefined, owner);
-    }
-    else if (typeof command === "object") {
-      // let clone = Object.assign({}, command, {
-      //   // We force the enumerability and the configurability (so the
-      //   // WebConsoleActor can reconfigure the property).
-      //   enumerable: true,
-      //   configurable: true
-      // });
-      let clone = {};
-      for (let attr in command) {
-        if (command.hasOwnProperty(attr))
-          clone[attr] = command[attr];
-      }
-      clone.enumerable = true;
-      clone.configurable = true;
+    } else if (typeof command === "object") {
+      let clone = Object.assign({}, command, {
+        // We force the enumerability and the configurability (so the
+        // WebConsoleActor can reconfigure the property).
+        enumerable: true,
+        configurable: true
+      });
 
       if (typeof command.get === "function") {
         clone.get = command.get.bind(undefined, owner);
@@ -1941,50 +974,48 @@ function addWebConsoleCommands(owner) {
   }
 }
 
-exports.addWebConsoleCommands = addWebConsoleCommands;
+//exports.addWebConsoleCommands = addWebConsoleCommands;
 
 /**
  * A ReflowObserver that listens for reflow events from the page.
  * Implements nsIReflowObserver.
  *
  * @constructor
- * @param object aWindow
+ * @param object window
  *        The window for which we need to track reflow.
- * @param object aOwner
+ * @param object owner
  *        The listener owner which needs to implement:
- *        - onReflowActivity(aReflowInfo)
+ *        - onReflowActivity(reflowInfo)
  */
 
-function ConsoleReflowListener(aWindow, aListener)
-{
-  this.docshell = aWindow.QueryInterface(Ci.nsIInterfaceRequestor)
+function ConsoleReflowListener(window, listener) {
+  this.docshell = window.QueryInterface(Ci.nsIInterfaceRequestor)
                          .getInterface(Ci.nsIWebNavigation)
                          .QueryInterface(Ci.nsIDocShell);
-  this.listener = aListener;
+  this.listener = listener;
   this.docshell.addWeakReflowObserver(this);
 }
 
-exports.ConsoleReflowListener = ConsoleReflowListener;
+//  exports.ConsoleReflowListener = ConsoleReflowListener;
 
 ConsoleReflowListener.prototype =
 {
-  // QueryInterface: XPCOMUtils.generateQI([Ci.nsIReflowObserver,
-  //                                        Ci.nsISupportsWeakReference]),
+//  QueryInterface: XPCOMUtils.generateQI([Ci.nsIReflowObserver,
+//                                         Ci.nsISupportsWeakReference]),
   docshell: null,
   listener: null,
 
   /**
    * Forward reflow event to listener.
    *
-   * @param DOMHighResTimeStamp aStart
-   * @param DOMHighResTimeStamp aEnd
-   * @param boolean aInterruptible
+   * @param DOMHighResTimeStamp start
+   * @param DOMHighResTimeStamp end
+   * @param boolean interruptible
    */
-  sendReflow: function CRL_sendReflow(aStart, aEnd, aInterruptible)
-  {
-    let frame = components.stack.caller.caller;
+  sendReflow: function (start, end, interruptible) {
+      let frame;// = components.stack.caller.caller;
 
-    let filename = frame.filename;
+    let filename = frame ? frame.filename : null;
 
     if (filename) {
       // Because filename could be of the form "xxx.js -> xxx.js -> xxx.js",
@@ -1993,52 +1024,40 @@ ConsoleReflowListener.prototype =
     }
 
     this.listener.onReflowActivity({
-      interruptible: aInterruptible,
-      start: aStart,
-      end: aEnd,
+      interruptible: interruptible,
+      start: start,
+      end: end,
       sourceURL: filename,
-      sourceLine: frame.lineNumber,
-      functionName: frame.name
+      sourceLine: frame ? frame.lineNumber : null,
+      functionName: frame ? frame.name : null
     });
   },
 
   /**
    * On uninterruptible reflow
    *
-   * @param DOMHighResTimeStamp aStart
-   * @param DOMHighResTimeStamp aEnd
+   * @param DOMHighResTimeStamp start
+   * @param DOMHighResTimeStamp end
    */
-  reflow: function CRL_reflow(aStart, aEnd)
-  {
-    this.sendReflow(aStart, aEnd, false);
+  reflow: function (start, end) {
+    this.sendReflow(start, end, false);
   },
 
   /**
    * On interruptible reflow
    *
-   * @param DOMHighResTimeStamp aStart
-   * @param DOMHighResTimeStamp aEnd
+   * @param DOMHighResTimeStamp start
+   * @param DOMHighResTimeStamp end
    */
-  reflowInterruptible: function CRL_reflowInterruptible(aStart, aEnd)
-  {
-    this.sendReflow(aStart, aEnd, true);
+  reflowInterruptible: function (start, end) {
+    this.sendReflow(start, end, true);
   },
 
   /**
    * Unregister listener.
    */
-  destroy: function CRL_destroy()
-  {
+  destroy: function () {
     this.docshell.removeWeakReflowObserver(this);
     this.listener = this.docshell = null;
   },
 };
-
-function gSequenceId()
-{
-  return gSequenceId.n++;
-}
-gSequenceId.n = 0;
-
-exports;
-
