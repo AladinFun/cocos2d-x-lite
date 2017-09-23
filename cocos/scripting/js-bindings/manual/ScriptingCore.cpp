@@ -1066,8 +1066,13 @@ void ScriptingCore::reportError(JSContext *cx, JSErrorReport *report, JS::Handle
             if (JS_GetProperty(cx, errObj, "stack", &stack) && stack.isString())
             {
                 JS::RootedString jsstackStr(cx, stack.toString());
-                stackStr = JS_EncodeStringToUTF8(cx, jsstackStr);
-                CCLOGERROR("Stack: %s\n", stackStr.c_str());
+                char *rawStr = JS_EncodeStringToUTF8(cx, jsstackStr);
+                if (rawStr != nullptr)
+                {
+                    stackStr = rawStr;
+                    JS_free(cx, rawStr);
+                    CCLOGERROR("Stack: %s\n", stackStr.c_str());
+                }
             }
         }
         
@@ -1691,24 +1696,25 @@ bool ScriptingCore::executeFunctionWithOwner(JS::HandleValue owner, const char *
     JS::RootedValue ownerval(cx, owner);
     JS::RootedObject obj(cx);
     if (ownerval.isObject())
-        obj = ownerval.toObjectOrNull();
-
-    do
     {
-        if (JS_HasProperty(cx, obj, name, &hasFunc) && hasFunc) {
-            if (!JS_GetProperty(cx, obj, name, &funcVal)) {
-                break;
+        obj = ownerval.toObjectOrNull();
+        do
+        {
+            if (JS_HasProperty(cx, obj, name, &hasFunc) && hasFunc) {
+                if (!JS_GetProperty(cx, obj, name, &funcVal)) {
+                    break;
+                }
+                if (funcVal.isNullOrUndefined()) {
+                    break;
+                }
+                
+                bRet = JS_CallFunctionValue(cx, obj, funcVal, args, retVal);
+                if (JS_IsExceptionPending(cx)) {
+                    handlePendingException(cx);
+                }
             }
-            if (funcVal.isNullOrUndefined()) {
-                break;
-            }
-
-            bRet = JS_CallFunctionValue(cx, obj, funcVal, args, retVal);
-            if (JS_IsExceptionPending(cx)) {
-                handlePendingException(cx);
-            }
-        }
-    }while(0);
+        } while(0);
+    }
     return bRet;
 }
 
@@ -1937,7 +1943,7 @@ void ScriptingCore::unrootObject(Ref* ref)
     else CCLOG("unrootObject: BUG. native not found: %p (%s)",  ref, typeid(*ref).name());
 }
 
-void ScriptingCore::removeObjectProxy(Ref* obj)
+void ScriptingCore::removeObjectProxy(void* obj)
 {
     auto proxy = jsb_get_native_proxy(obj);
     if (proxy)
@@ -2581,6 +2587,10 @@ void jsb_ref_autoreleased_init(JSContext* cx, JS::HandleObject obj, Ref* ref, co
 // rebind
 void jsb_ref_rebind(JSContext* cx, JS::HandleObject jsobj, js_proxy_t *proxy, cocos2d::Ref* oldRef, cocos2d::Ref* newRef, const char* debug)
 {
+#if COCOS2D_DEBUG > 1
+    CCLOG("------REBOUND------ Cpp(%s): %p - JS: %p", debug, oldRef, jsobj.get());
+    CCLOG("++++++REBOUND++++++ Cpp(%s): %p - JS: %p", debug, newRef, jsobj.get());
+#endif // COCOS2D_DEBUG
 #if CC_ENABLE_GC_FOR_NATIVE_OBJECTS
     // Release the old reference as it have been retained by jsobj previously,
     // and the jsobj won't have any chance to release it in the future
