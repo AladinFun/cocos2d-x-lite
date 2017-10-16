@@ -114,7 +114,7 @@ public class AppActivity extends Cocos2dxActivity{
 	    } 
 	 
 	public String getHostIpAddress() {
-		WifiManager wifiMgr = (WifiManager) getSystemService(WIFI_SERVICE);
+		WifiManager wifiMgr = (WifiManager) getApplicationContext().getSystemService(WIFI_SERVICE);
 		WifiInfo wifiInfo = wifiMgr.getConnectionInfo();
 		int ip = wifiInfo.getIpAddress();
 		return ((ip & 0xFF) + "." + ((ip >>>= 8) & 0xFF) + "." + ((ip >>>= 8) & 0xFF) + "." + ((ip >>>= 8) & 0xFF));
