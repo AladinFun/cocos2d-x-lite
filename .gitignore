@@ -9,6 +9,7 @@ Thumbs.db
 /prebuilt_mk
 /prebuilt_mk*.zip
 /simulator.json
+/tools/simulator/simulator/
 
 # Ignore files build by Visual Studio
 *.obj
