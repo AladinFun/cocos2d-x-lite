@@ -24,21 +24,12 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ****************************************************************************/
-package org.cocos2dx.lua;
-
-import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.net.SocketException;
-import java.util.Enumeration;
-import java.util.ArrayList;
-
-import org.cocos2dx.lib.Cocos2dxActivity;
+package org.cocos2dx.javascript;
 
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.pm.ApplicationInfo;
 import android.content.pm.ActivityInfo;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
@@ -46,10 +37,11 @@ import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.provider.Settings;
-import android.text.format.Formatter;
-import android.util.Log;
 import android.view.WindowManager;
-import android.widget.Toast;
+
+import org.cocos2dx.lib.Cocos2dxActivity;
+
+import java.util.ArrayList;
 
 
 public class AppActivity extends Cocos2dxActivity{
@@ -58,7 +50,16 @@ public class AppActivity extends Cocos2dxActivity{
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		
+        // Workaround in https://stackoverflow.com/questions/16283079/re-launch-of-activity-on-home-button-but-only-the-first-time/16447508
+        if (!isTaskRoot()) {
+            // Android launched another instance of the root activity into an existing task
+            //  so just quietly finish and go away, dropping the user back into the activity
+            //  at the top of the stack (ie: the last state of this task)
+            // Don't need to finish it again since it's finished in super.onCreate .
+            return;
+        }
+        // DO OTHER INITIALIZATION BELOW
+        
 		if(nativeIsLandScape()) {
 			setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
 		} else {

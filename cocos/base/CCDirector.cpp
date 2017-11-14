@@ -1,4 +1,4 @@
-﻿/****************************************************************************
+/****************************************************************************
 Copyright (c) 2008-2010 Ricardo Quesada
 Copyright (c) 2010-2013 cocos2d-x.org
 Copyright (c) 2011      Zynga Inc.
@@ -47,8 +47,6 @@ THE SOFTWARE.
 #include "renderer/CCTextureCache.h"
 #include "renderer/ccGLStateCache.h"
 #include "renderer/CCRenderer.h"
-#include "renderer/CCRenderState.h"
-#include "renderer/CCFrameBuffer.h"
 #include "base/CCUserDefault.h"
 #include "base/ccFPSImages.h"
 #include "base/CCScheduler.h"
@@ -93,6 +91,44 @@ const char *Director::EVENT_BEFORE_UPDATE = "director_before_update";
 const char *Director::EVENT_AFTER_UPDATE = "director_after_update";
 const char *Director::EVENT_RESET = "director_reset";
 
+
+Director::MatrixStack::MatrixStack()
+{
+}
+
+void Director::MatrixStack::init() {
+    _stack.clear();
+    _stack.reserve(16);
+    
+    _stack.push_back(Mat4::IDENTITY);
+    _stackTop = 0;
+}
+
+void Director::MatrixStack::push(const Mat4& m) {
+    if (_stackTop >= _stack.size() - 1) {
+        _stack.push_back(m);
+    }
+    else {
+        _stack[_stackTop + 1] = m;
+    }
+    ++_stackTop;
+}
+
+void Director::MatrixStack::pop() {
+    if (_stackTop > 0) {
+        --_stackTop;
+    }
+}
+
+Mat4& Director::MatrixStack::top() {
+    return _stack[_stackTop];
+}
+
+const Mat4& Director::MatrixStack::top() const {
+    return _stack[_stackTop];
+}
+
+
 Director* Director::getInstance()
 {
     if (!s_SharedDirector)
@@ -107,7 +143,8 @@ Director* Director::getInstance()
 
 Director::Director()
 : _isStatusLabelUpdated(true),
-_invalid(true)
+_invalid(true),
+_isCullingEnabled(true)
 {
 }
 
@@ -144,7 +181,6 @@ bool Director::init(void)
     _winSizeInPoints = Size::ZERO;
 
     _openGLView = nullptr;
-    _defaultFBO = nullptr;
     
     _contentScaleFactor = 1.0f;
 
@@ -173,7 +209,6 @@ bool Director::init(void)
     initMatrixStack();
 
     _renderer = new (std::nothrow) Renderer;
-    RenderState::initialize();
 
     return true;
 }
@@ -190,14 +225,13 @@ Director::~Director(void)
     CC_SAFE_RELEASE(_notificationNode);
     CC_SAFE_RELEASE(_scheduler);
     CC_SAFE_RELEASE(_actionManager);
-    CC_SAFE_DELETE(_defaultFBO);
 
-    delete _eventBeforeUpdate;
-    delete _eventAfterUpdate;
-    delete _eventAfterDraw;
-    delete _eventAfterVisit;
-    delete _eventProjectionChanged;
-    delete _eventResetDirector;
+    CC_SAFE_RELEASE(_eventBeforeUpdate);
+    CC_SAFE_RELEASE(_eventAfterUpdate);
+    CC_SAFE_RELEASE(_eventAfterDraw);
+    CC_SAFE_RELEASE(_eventAfterVisit);
+    CC_SAFE_RELEASE(_eventProjectionChanged);
+    CC_SAFE_RELEASE(_eventResetDirector);
 
     delete _renderer;
 
@@ -276,7 +310,7 @@ void Director::drawScene()
     }
 
     _renderer->clear();
-    experimental::FrameBuffer::clearAllFBOs();
+
     /* to avoid flickr, nextScene MUST be here: after tick and before draw.
      * FIXME: Which bug is this one. It seems that it can't be reproduced with v0.9
      */
@@ -392,9 +426,6 @@ void Director::setOpenGLView(GLView *openGLView)
         {
             _eventDispatcher->setEnabled(true);
         }
-        
-        _defaultFBO = experimental::FrameBuffer::getOrCreateDefaultFBO(_openGLView);
-        _defaultFBO->retain();
     }
 }
 
@@ -438,24 +469,9 @@ void Director::setNextDeltaTimeZero(bool nextDeltaTimeZero)
 //
 void Director::initMatrixStack()
 {
-    while (!_modelViewMatrixStack.empty())
-    {
-        _modelViewMatrixStack.pop();
-    }
-
-    while (!_projectionMatrixStack.empty())
-    {
-        _projectionMatrixStack.pop();
-    }
-
-    while (!_textureMatrixStack.empty())
-    {
-        _textureMatrixStack.pop();
-    }
-
-    _modelViewMatrixStack.push(Mat4::IDENTITY);
-    _projectionMatrixStack.push(Mat4::IDENTITY);
-    _textureMatrixStack.push(Mat4::IDENTITY);
+    _modelViewMatrixStack.init();
+    _projectionMatrixStack.init();
+    _textureMatrixStack.init();
 }
 
 void Director::resetMatrixStack()
@@ -547,15 +563,35 @@ void Director::pushMatrix(MATRIX_STACK_TYPE type)
 {
     if(type == MATRIX_STACK_TYPE::MATRIX_STACK_MODELVIEW)
     {
-        _modelViewMatrixStack.push(_modelViewMatrixStack.top());
+        pushMatrix(type, _modelViewMatrixStack.top());
     }
     else if(type == MATRIX_STACK_TYPE::MATRIX_STACK_PROJECTION)
     {
-        _projectionMatrixStack.push(_projectionMatrixStack.top());
+        pushMatrix(type,  _projectionMatrixStack.top());
     }
     else if(type == MATRIX_STACK_TYPE::MATRIX_STACK_TEXTURE)
     {
-        _textureMatrixStack.push(_textureMatrixStack.top());
+        pushMatrix(type, _textureMatrixStack.top());
+    }
+    else
+    {
+        CCASSERT(false, "unknown matrix stack type");
+    }
+}
+
+void Director::pushMatrix(MATRIX_STACK_TYPE type, const Mat4& mat)
+{
+    if(type == MATRIX_STACK_TYPE::MATRIX_STACK_MODELVIEW)
+    {
+        _modelViewMatrixStack.push(mat);
+    }
+    else if(type == MATRIX_STACK_TYPE::MATRIX_STACK_PROJECTION)
+    {
+        _projectionMatrixStack.push(mat);
+    }
+    else if(type == MATRIX_STACK_TYPE::MATRIX_STACK_TEXTURE)
+    {
+        _textureMatrixStack.push(mat);
     }
     else
     {
@@ -658,7 +694,7 @@ void Director::purgeCachedData(void)
 
 float Director::getZEye(void) const
 {
-    return (_winSizeInPoints.height / 1.1566f);
+    return (_winSizeInPoints.height / 1.154700538379252f);//(2 * tanf(M_PI/6))
 }
 
 void Director::setAlphaBlending(bool on)
@@ -683,9 +719,6 @@ void Director::setDepthTest(bool on)
 void Director::setClearColor(const Color4F& clearColor)
 {
     _renderer->setClearColor(clearColor);
-    auto defaultFBO = experimental::FrameBuffer::getOrCreateDefaultFBO(_openGLView);
-    
-    if(defaultFBO) defaultFBO->setClearColor(clearColor);
 }
 
 static void GLToClipTransform(Mat4 *transformOut)
@@ -812,6 +845,14 @@ void Director::replaceScene(Scene *scene)
             _nextScene->onExit();
         }
         _nextScene->cleanup();
+
+#if CC_ENABLE_GC_FOR_NATIVE_OBJECTS
+        auto sEngine = ScriptEngineManager::getInstance()->getScriptEngine();
+        if (sEngine)
+        {
+            sEngine->releaseScriptObject(this, _nextScene);
+        }
+#endif // CC_ENABLE_GC_FOR_NATIVE_OBJECTS
         _nextScene = nullptr;
     }
 
@@ -823,7 +864,6 @@ void Director::replaceScene(Scene *scene)
     if (sEngine)
     {
         sEngine->retainScriptObject(this, scene);
-        sEngine->releaseScriptObject(this, _scenesStack.at(index));
     }
 #endif // CC_ENABLE_GC_FOR_NATIVE_OBJECTS
     _scenesStack.replace(index, scene);
@@ -1036,8 +1076,6 @@ void Director::reset()
 
     GL::invalidateStateCache();
 
-    RenderState::finalize();
-
     destroyTextureCache();
 }
 
@@ -1061,9 +1099,6 @@ void Director::purgeDirector()
 void Director::restartDirector()
 {
     reset();
-
-    // RenderState need to be reinitialized
-    RenderState::initialize();
 
     // Texture cache need to be reinitialized
     initTextureCache();
@@ -1108,10 +1143,17 @@ void Director::setNextScene()
 
     if (_runningScene)
     {
+#if CC_ENABLE_GC_FOR_NATIVE_OBJECTS
+        auto sEngine = ScriptEngineManager::getInstance()->getScriptEngine();
+        if (sEngine)
+        {
+            sEngine->releaseScriptObject(this, _runningScene);
+        }
+#endif // CC_ENABLE_GC_FOR_NATIVE_OBJECTS
         _runningScene->release();
     }
     _runningScene = _nextScene;
-    _nextScene->retain();
+    _runningScene->retain();
     _nextScene = nullptr;
 
     if ((! runningIsTransition) && _runningScene)

@@ -1,24 +1,11 @@
 #include "AppDelegate.h"
 
-#include "platform/CCGLView.h"
+#include "cocos2d.h"
 
-#if (CC_TARGET_PLATFORM == CC_PLATFORM_IOS)
-#include "platform/ios/CCGLViewImpl-ios.h"
-#endif // CC_TARGET_PLATFORM == CC_PLATFORM_IOS
-#if (CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID)
-#include "platform/android/CCGLViewImpl-android.h"
-#endif // CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
-#if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32)
-#include "platform/desktop/CCGLViewImpl-desktop.h"
-#endif // CC_TARGET_PLATFORM == CC_PLATFORM_WIN32
-#if (CC_TARGET_PLATFORM == CC_PLATFORM_MAC)
-#include "platform/desktop/CCGLViewImpl-desktop.h"
-#endif // CC_TARGET_PLATFORM == CC_PLATFORM_MAC
-
-#include "base/CCDirector.h"
-#include "base/CCEventDispatcher.h"
-
-#include "js_module_register.h"
+#include "cocos/scripting/js-bindings/manual/ScriptingCore.h"
+#include "cocos/scripting/js-bindings/manual/jsb_module_register.hpp"
+#include "cocos/scripting/js-bindings/manual/jsb_global.h"
+#include "cocos/scripting/js-bindings/jswrapper/SeApi.h"
 
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID || CC_TARGET_PLATFORM == CC_PLATFORM_IOS) && PACKAGE_AS
 #include "SDKManager.h"
@@ -36,7 +23,6 @@ AppDelegate::AppDelegate()
 AppDelegate::~AppDelegate()
 {
     ScriptEngineManager::destroyInstance();
-
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID || CC_TARGET_PLATFORM == CC_PLATFORM_IOS) && PACKAGE_AS
     SDKManager::getInstance()->purge();
 #endif
@@ -61,26 +47,43 @@ bool AppDelegate::applicationDidFinishLaunching()
 #if(CC_TARGET_PLATFORM == CC_PLATFORM_WP8) || (CC_TARGET_PLATFORM == CC_PLATFORM_WINRT)
         glview = GLViewImpl::create("HelloJavascript");
 #else
-        glview = GLViewImpl::createWithRect("HelloJavascript", Rect(0,0,900,640));
+        glview = GLViewImpl::createWithRect("HelloJavascript", cocos2d::Rect(0,0,900,640));
 #endif
         director->setOpenGLView(glview);
     }
     
     // set FPS. the default value is 1.0/60 if you don't call this
     director->setAnimationInterval(1.0 / 60);
-    
-    js_module_register();
-    
+
     ScriptingCore* sc = ScriptingCore::getInstance();
-#if (CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID || CC_TARGET_PLATFORM == CC_PLATFORM_IOS) && PACKAGE_AS    
-    sc->addRegisterCallback(register_all_anysdk_framework);
-    sc->addRegisterCallback(register_all_anysdk_manual);
-#endif
     ScriptEngineManager::getInstance()->setScriptEngine(sc);
-    sc->start();
-    sc->runScript("script/jsb_boot.js");
-    sc->runScript("main.js");
+
+    se::ScriptEngine* se = se::ScriptEngine::getInstance();
+
+    jsb_set_xxtea_key("");
+    jsb_init_file_operation_delegate();
+
+#if defined(COCOS2D_DEBUG) && (COCOS2D_DEBUG > 0)
+    // Enable debugger here
+    jsb_enable_debugger("0.0.0.0", 5086);
+#endif
+
+    se->setExceptionCallback([](const char* location, const char* message, const char* stack){
+        // Send exception information to server like Tencent Bugly.
+
+    });
+
+    jsb_register_all_modules();
+
+#if (CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID || CC_TARGET_PLATFORM == CC_PLATFORM_IOS) && PACKAGE_AS
+    se->addRegisterCallback(register_all_anysdk_framework);
+    se->addRegisterCallback(register_all_anysdk_manual);
+#endif
+
+    se->start();
     
+    jsb_run_script("main.js");
+
     return true;
 }
 

@@ -11,6 +11,10 @@ Thumbs.db
 /simulator.json
 /tools/simulator/simulator/
 tools/simulator/frameworks/runtime-src/proj.android-studio/gradle/wrapper/
+
+# Ignore xcodeproj for backup
+/simulator.xcodeproj
+
 # Ignore files build by Visual Studio
 *.obj
 *.exe

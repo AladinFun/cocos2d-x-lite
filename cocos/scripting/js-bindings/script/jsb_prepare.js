@@ -23,6 +23,47 @@
 // Prepare JSB environment
 
 var window = window || this;
+
+// Hack JavaScriptCore begin
+
+
+if (window.scriptEngineType == "JavaScriptCore") {
+    window.__jsc_createArrayBufferObject = function(arr) {
+        var len = arr.length;
+        var buffer = new ArrayBuffer(len);
+        var typedArr = new Uint8Array(buffer);
+        for (var i = 0; i < len; ++i) {
+            typedArr[i] = arr[i];
+        }
+        return buffer;
+    };
+
+    window.__jsc_getArrayBufferData = function(arrBuf) {
+        var typedArr = new Uint8Array(arrBuf);
+        var len = typedArr.length;
+        var arr = new Array(len);
+        for (var i = 0; i < len; ++i) {
+            arr[i] = typedArr[i];
+        }
+        return arr;
+    };
+
+    window.__jsc_getTypedArrayData = function(typedArr) {
+        var uint8Array = new Uint8Array(typedArr.buffer);
+        var len = uint8Array.length;
+        var arr = new Array(len);
+        for (var i = 0; i < len; ++i) {
+            arr[i] = uint8Array[i];
+        }
+        return arr;
+    };
+
+    window.__jscTypedArrayConstructor = Object.getPrototypeOf(Uint16Array.prototype).constructor;
+}
+
+
+// Hack JavaScriptCore end
+
 var cc = cc || {};
 /**
  * @namespace jsb
@@ -129,7 +170,7 @@ cc.Class.extend = function (prop) {
         prototype[name] = typeof prop[name] == "function" &&
             typeof _super[name] == "function" && fnTest.test(prop[name]) ?
             (function (name, fn) {
-                return function (...args) {
+                return function () {
                     var tmp = this._super;
 
                     // Add a new ._super() method that is the same method
@@ -138,7 +179,7 @@ cc.Class.extend = function (prop) {
 
                     // The method only need to be bound temporarily, so we
                     // remove it when we're done executing
-                    var ret = fn.apply(this, args);
+                    var ret = fn.apply(this, arguments);
                     this._super = tmp;
 
                     return ret;
@@ -147,18 +188,18 @@ cc.Class.extend = function (prop) {
             prop[name];
     }
 
-    Class = function (...args) {
+    Class = function () {
         if (!initializing) {
             this.__instanceId = ClassManager.getNewInstanceId();
             if (this.ctor) {
-                switch (args.length) {
+                switch (arguments.length) {
                     case 0: this.ctor(); break;
-                    case 1: this.ctor(args[0]); break;
-                    case 2: this.ctor(args[0], args[1]); break;
-                    case 3: this.ctor(args[0], args[1], args[2]); break;
-                    case 4: this.ctor(args[0], args[1], args[2], args[3]); break;
-                    case 5: this.ctor(args[0], args[1], args[2], args[3], args[4]); break;
-                    default: this.ctor.apply(this, args);
+                    case 1: this.ctor(arguments[0]); break;
+                    case 2: this.ctor(arguments[0], arguments[1]); break;
+                    case 3: this.ctor(arguments[0], arguments[1], arguments[2]); break;
+                    case 4: this.ctor(arguments[0], arguments[1], arguments[2], arguments[3]); break;
+                    case 5: this.ctor(arguments[0], arguments[1], arguments[2], arguments[3], arguments[4]); break;
+                    default: this.ctor.apply(this, arguments);
                 }
             }
         }
@@ -182,35 +223,41 @@ cc.Class.extend = function (prop) {
     return Class;
 };
 
+jsb.__obj_ref_id = 0;
+
 jsb.registerNativeRef = function (owner, target) {
     if (owner && target && owner !== target) {
+        var targetID = target.__jsb_ref_id;
+        if (targetID === undefined)
+            targetID = target.__jsb_ref_id = jsb.__obj_ref_id++;
+
         var refs = owner.__nativeRefs;
         if (!refs) {
-            refs = owner.__nativeRefs = [];
+            refs = owner.__nativeRefs = {};
         }
-        var index = refs.indexOf(target);
-        if (index === -1) {
-            owner.__nativeRefs.push(target);
-        }
+
+        refs[targetID] = target;
     }
 };
 
 jsb.unregisterNativeRef = function (owner, target) {
     if (owner && target && owner !== target) {
+        var targetID = target.__jsb_ref_id;
+        if (targetID === undefined)
+            return;
+
         var refs = owner.__nativeRefs;
         if (!refs) {
             return;
         }
-        var index = refs.indexOf(target);
-        if (index !== -1) {
-            owner.__nativeRefs.splice(index, 1);
-        }
+
+        delete refs[targetID];
     }
 };
 
 jsb.unregisterAllNativeRefs = function (owner) {
     if (!owner) return;
-    owner.__nativeRefs.length = 0;
+    delete owner.__nativeRefs;
 };
 
 jsb.unregisterChildRefsForNode = function (node, recursive) {

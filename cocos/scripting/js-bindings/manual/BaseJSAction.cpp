@@ -1,8 +1,5 @@
 /****************************************************************************
-Copyright (c) 2008-2010 Ricardo Quesada
-Copyright (c) 2010-2012 cocos2d-x.org
-Copyright (c) 2011      Zynga Inc.
-Copyright (c) 2013-2016 Chukong Technologies Inc.
+Copyright (c) 2017 Chukong Technologies Inc.
 
 http://www.cocos2d-x.org
 
@@ -25,10 +22,37 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ****************************************************************************/
 
-#include "base/ccUTF8.h"
 #include "BaseJSAction.h"
-#include "scripting/js-bindings/manual/ScriptingCore.h"
+
+#include "base/ccUTF8.h"
 #include "scripting/js-bindings/auto/jsb_cocos2dx_auto.hpp"
+#include "scripting/js-bindings/manual/jsb_conversions.hpp"
+
+namespace {
+
+    se::Value invokeJSFunction(cocos2d::BaseJSAction* action, const char* funcName, const se::ValueArray& args)
+    {
+        se::ScriptEngine::getInstance()->clearException();
+        se::AutoHandleScope hs;
+
+        se::Value ret;
+        se::Value v;
+        if (native_ptr_to_seval<cocos2d::BaseJSAction>(action, __jsb_cocos2d_BaseJSAction_class, &v))
+        {
+            assert(v.isObject());
+            se::Value func;
+            if (v.toObject()->getProperty(funcName, &func) && func.isObject() && func.toObject()->isFunction())
+            {
+                if (func.toObject()->call(args, v.toObject(), &ret))
+                {
+                    return ret;
+                }
+            }
+        }
+        
+        return ret;
+    }
+}
 
 NS_CC_BEGIN
 
@@ -46,86 +70,45 @@ std::string BaseJSAction::description() const
     return StringUtils::format("<BaseJSAction | Tag = %d", _tag);
 }
 
-BaseJSAction *BaseJSAction::clone() const
+BaseJSAction* BaseJSAction::clone() const
 {
-	JSContext *cx = ScriptingCore::getInstance()->getGlobalContext();
-
-	JS::RootedObject jsObj(cx);
-	JS::RootedObject proto(cx, jsb_cocos2d_BaseJSAction_prototype->get());
-	jsb_ref_get_or_create_jsobject(cx, (Ref *)this, jsb_cocos2d_BaseJSAction_class, proto, &jsObj, "BaseJSAction::clone");
-
-	JS::RootedValue retVal(cx);
-	JS::RootedValue owner(cx, JS::ObjectOrNullValue(jsObj));
-    ScriptingCore::getInstance()->executeFunctionWithOwner(owner, "clone", JS::HandleValueArray::empty(), &retVal);
-
-	JS::RootedObject retObj(cx, retVal.toObjectOrNull());
-    auto proxy = jsb_get_js_proxy(cx, retObj);
-    BaseJSAction* action = (BaseJSAction *)(proxy ? proxy->ptr : nullptr);
-    return action;
+    se::Value jsRet = invokeJSFunction(const_cast<cocos2d::BaseJSAction*>(this), "clone", se::EmptyValueArray);
+    cocos2d::BaseJSAction* ret = nullptr;
+    seval_to_native_ptr(jsRet, &ret);
+    return ret;
 }
 
 BaseJSAction *BaseJSAction::reverse() const
 {
-	JSContext *cx = ScriptingCore::getInstance()->getGlobalContext();
-	
-	JS::RootedObject jsObj(cx);
-	JS::RootedObject proto(cx, jsb_cocos2d_BaseJSAction_prototype->get());
-    jsb_ref_get_or_create_jsobject(cx, (Ref *)this, jsb_cocos2d_BaseJSAction_class, proto, &jsObj, "BaseJSAction::reverse");
-	
-	JS::RootedValue retVal(cx);
-	JS::RootedValue owner(cx, JS::ObjectOrNullValue(jsObj));
-    ScriptingCore::getInstance()->executeFunctionWithOwner(owner, "reverse", JS::HandleValueArray::empty(), &retVal);
-
-    JS::RootedObject retObj(cx, retVal.toObjectOrNull());
-    auto proxy = jsb_get_js_proxy(cx, retObj);
-    BaseJSAction* action = (BaseJSAction *)(proxy ? proxy->ptr : nullptr);
-    return action;
+    se::Value jsRet = invokeJSFunction(const_cast<cocos2d::BaseJSAction*>(this), "reverse", se::EmptyValueArray);
+    cocos2d::BaseJSAction* ret = nullptr;
+    seval_to_native_ptr(jsRet, &ret);
+    return ret;
 }
 
 bool BaseJSAction::isDone() const
 {
-	JSContext *cx = ScriptingCore::getInstance()->getGlobalContext();
-	
-	JS::RootedObject jsObj(cx);
-	JS::RootedObject proto(cx, jsb_cocos2d_BaseJSAction_prototype->get());
-    jsb_ref_get_or_create_jsobject(cx, (Ref *)this, jsb_cocos2d_BaseJSAction_class, proto, &jsObj, "BaseJSAction::isDone");
-    
-	JS::RootedValue retVal(cx);
-	JS::RootedValue owner(cx, JS::ObjectOrNullValue(jsObj));
-	ScriptingCore::getInstance()->executeFunctionWithOwner(owner, "isDone", JS::HandleValueArray::empty(), &retVal);
-
-    if (retVal.isBoolean()) {
-        return retVal.toBoolean();
+    se::Value jsRet = invokeJSFunction(const_cast<cocos2d::BaseJSAction*>(this), "isDone", se::EmptyValueArray);
+    if (jsRet.isBoolean())
+    {
+        return jsRet.toBoolean();
     }
+
     return false;
 }
 
 void BaseJSAction::step(float dt)
 {
-	JSContext *cx = ScriptingCore::getInstance()->getGlobalContext();
-
-	JS::RootedObject jsObj(cx);
-	JS::RootedObject proto(cx, jsb_cocos2d_BaseJSAction_prototype->get());
-    jsb_ref_get_or_create_jsobject(cx, this, jsb_cocos2d_BaseJSAction_class, proto, &jsObj, "BaseJSAction::step");
-	
-	JS::RootedValue argv(cx, JS::DoubleValue(dt));
-	JS::HandleValueArray args(argv);
-	JS::RootedValue owner(cx, JS::ObjectOrNullValue(jsObj));
-    ScriptingCore::getInstance()->executeFunctionWithOwner(owner, "step", args);
+    se::ValueArray args;
+    args.push_back(se::Value(dt));
+    invokeJSFunction(const_cast<cocos2d::BaseJSAction*>(this), "step", args);
 }
 
 void BaseJSAction::update(float time)
 {
-	JSContext *cx = ScriptingCore::getInstance()->getGlobalContext();
-
-	JS::RootedObject jsObj(cx);
-	JS::RootedObject proto(cx, jsb_cocos2d_BaseJSAction_prototype->get());
-    jsb_ref_get_or_create_jsobject(cx, this, jsb_cocos2d_BaseJSAction_class, proto, &jsObj, "BaseJSAction::update");
-
-	JS::RootedValue argv(cx, JS::DoubleValue(time));
-	JS::HandleValueArray args(argv);
-	JS::RootedValue owner(cx, JS::ObjectOrNullValue(jsObj));
-	ScriptingCore::getInstance()->executeFunctionWithOwner(owner, "update", args);
+    se::ValueArray args;
+    args.push_back(se::Value(time));
+    invokeJSFunction(const_cast<cocos2d::BaseJSAction*>(this), "update", args);
 }
 
 NS_CC_END

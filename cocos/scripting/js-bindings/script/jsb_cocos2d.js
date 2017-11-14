@@ -26,7 +26,7 @@
 
 // CCConfig.js
 //
-cc.ENGINE_VERSION = "Cocos2d-x-lite v1.6.0";
+cc.ENGINE_VERSION = "Cocos2d-x-lite v1.7.0";
 
 // Resolution policies
 
@@ -595,7 +595,10 @@ cc.DrawNode = cc._DrawNode.extend({
         cc._DrawNode.prototype.drawDot.call(this, pos, radius, color);
     },
 
-    drawSegment:function (from, to, lineWidth = this._lineWidth, color = this._drawColor) {
+    drawSegment:function (from, to, lineWidth, color) {
+        lineWidth = lineWidth || this._lineWidth;
+        color = color || this._drawColor;
+
         cc._DrawNode.prototype.drawSegment.call(this, from, to, lineWidth, color);
     },
 
@@ -1062,9 +1065,7 @@ _p.schedule = function (callback, target, interval, repeat, delay, paused, key) 
             delay = 0;
         }
     }
-    if (key === undefined) {
-        key = target.__instanceId + "";
-    }
+
     this._schedule(callback, target, interval, repeat, delay, paused, key);
 };
 
@@ -1109,17 +1110,21 @@ cc.defineGetterSetter(cc.BlendFunc, "ALPHA_NON_PREMULTIPLIED", cc.BlendFunc._alp
 cc.BlendFunc.ADDITIVE;
 cc.defineGetterSetter(cc.BlendFunc, "ADDITIVE", cc.BlendFunc._additive);
 
-cc.GLProgram.prototype.setUniformLocationWithMatrix2fv = function (...args) {
-    args = Array.prototype.concat.call(args, 2);
-    this.setUniformLocationWithMatrixfvUnion.apply(this, args);
+cc.GLProgram.prototype.setUniformLocationWithMatrix2fv = function(){
+    var tempArray = Array.prototype.slice.call(arguments);
+    tempArray.push(2);
+    this.setUniformLocationWithMatrixfvUnion.apply(this, tempArray);
 };
-cc.GLProgram.prototype.setUniformLocationWithMatrix3fv = function (...args) {
-    args = Array.prototype.concat.call(args, 3);
-    this.setUniformLocationWithMatrixfvUnion.apply(this, args);
+
+cc.GLProgram.prototype.setUniformLocationWithMatrix3fv = function(){
+    var tempArray = Array.prototype.slice.call(arguments);
+    tempArray.push(3);
+    this.setUniformLocationWithMatrixfvUnion.apply(this, tempArray);
 };
-cc.GLProgram.prototype.setUniformLocationWithMatrix4fv = function (...args) {
-    args = Array.prototype.concat.call(args, 4);
-    this.setUniformLocationWithMatrixfvUnion.apply(this, args);
+cc.GLProgram.prototype.setUniformLocationWithMatrix4fv = function(){
+    var tempArray = Array.prototype.slice.call(arguments);
+    tempArray.push(4);
+    this.setUniformLocationWithMatrixfvUnion.apply(this, tempArray);
 };
 
 //

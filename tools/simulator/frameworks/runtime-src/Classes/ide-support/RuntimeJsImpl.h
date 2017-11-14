@@ -9,7 +9,7 @@
 
 #include "ide-support/CodeIDESupport.h"
 
-#if (COCOS2D_DEBUG > 0) && (CC_CODE_IDE_DEBUG_SUPPORT > 0)
+#if (CC_CODE_IDE_DEBUG_SUPPORT > 0)
 #include "runtime/RuntimeProtocol.h"
 
 class RuntimeJsImpl : public RuntimeProtocol
@@ -30,7 +30,6 @@ private:
     RuntimeJsImpl();
     bool initJsEnv();
     bool loadScriptFile(const std::string& file);
-    bool _hasStarted;
 };
 
 #endif // (COCOS2D_DEBUG > 0) && (CC_CODE_IDE_DEBUG_SUPPORT > 0)

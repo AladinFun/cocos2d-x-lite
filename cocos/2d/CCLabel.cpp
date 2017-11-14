@@ -172,7 +172,7 @@ private:
 
 Label* Label::create()
 {
-    auto ret = new (std::nothrow) Label;
+    auto ret = new (std::nothrow) Label();
 
     if (ret)
     {
@@ -184,10 +184,12 @@ Label* Label::create()
 
 Label* Label::createWithSystemFont(const std::string& text, const std::string& font, float fontSize, const Size& dimensions /* = Size::ZERO */, TextHAlignment hAlignment /* = TextHAlignment::LEFT */, TextVAlignment vAlignment /* = TextVAlignment::TOP */)
 {
-    auto ret = new (std::nothrow) Label(hAlignment,vAlignment);
+    auto ret = new (std::nothrow) Label();
 
     if (ret)
     {
+        ret->_hAlignment = hAlignment;
+        ret->_vAlignment = vAlignment;
         ret->setSystemFontName(font);
         ret->setSystemFontSize(fontSize);
         ret->setDimensions(dimensions.width, dimensions.height);
@@ -204,7 +206,7 @@ Label* Label::createWithSystemFont(const std::string& text, const std::string& f
 
 Label* Label::createWithTTF(const std::string& text, const std::string& fontFile, float fontSize, const Size& dimensions /* = Size::ZERO */, TextHAlignment hAlignment /* = TextHAlignment::LEFT */, TextVAlignment vAlignment /* = TextVAlignment::TOP */)
 {
-    auto ret = new (std::nothrow) Label(hAlignment,vAlignment);
+    auto ret = new (std::nothrow) Label();
 
     if (ret && ret->initWithTTF(text, fontFile, fontSize, dimensions, hAlignment, vAlignment))
     {
@@ -218,7 +220,7 @@ Label* Label::createWithTTF(const std::string& text, const std::string& fontFile
 
 Label* Label::createWithTTF(const TTFConfig& ttfConfig, const std::string& text, TextHAlignment hAlignment /* = TextHAlignment::CENTER */, int maxLineWidth /* = 0 */)
 {
-    auto ret = new (std::nothrow) Label(hAlignment);
+    auto ret = new (std::nothrow) Label();
 
     if (ret && ret->initWithTTF(ttfConfig, text, hAlignment, maxLineWidth))
     {
@@ -237,17 +239,20 @@ Label* Label::createWithBMFont(const std::string& fntDataString,
                                int maxLineWidth /* = 0 */,
                                const Vec2& imageOffset /* = Vec2::ZERO */)
 {
-    auto ret = new (std::nothrow) Label(hAlignment);
-    spriteFrame->autorelease();
-    if (ret && ret->setBMFontFilePath(fntDataString,
-                                      spriteFrame,
-                                      imageOffset))
-    {
-        ret->setMaxLineWidth(maxLineWidth);
-        ret->setString(text);
-        ret->autorelease();
+    spriteFrame->autorelease(); //FIXME: Why to autorelease sprite frame here?
 
-        return ret;
+    auto ret = new (std::nothrow) Label();
+    if (ret != nullptr)
+    {
+        ret->_hAlignment = hAlignment;
+
+        if (ret->setBMFontFilePath(fntDataString, spriteFrame, imageOffset))
+        {
+            ret->setMaxLineWidth(maxLineWidth);
+            ret->setString(text);
+            ret->autorelease();
+            return ret;
+        }
     }
 
     delete ret;
@@ -312,10 +317,11 @@ bool Label::setCharMap(const std::string& plistFile)
     return true;
 }
 
-
 bool Label::initWithTTF(const std::string& text, const std::string& fontFilePath, float fontSize,
                         const Size& dimensions, TextHAlignment hAlignment, TextVAlignment vAlignment)
 {
+    _hAlignment = hAlignment;
+    _vAlignment = vAlignment;
     if (FileUtils::getInstance()->isFileExist(fontFilePath))
     {
         TTFConfig ttfConfig(fontFilePath, fontSize, GlyphCollection::DYNAMIC);
@@ -331,6 +337,7 @@ bool Label::initWithTTF(const std::string& text, const std::string& fontFilePath
 
 bool Label::initWithTTF(const TTFConfig& ttfConfig, const std::string& text, TextHAlignment hAlignment, int maxLineWidth)
 {
+    _hAlignment = hAlignment;
     if (FileUtils::getInstance()->isFileExist(ttfConfig.fontFilePath) && setTTFConfig(ttfConfig))
     {
         setMaxLineWidth(maxLineWidth);
@@ -372,23 +379,68 @@ bool Label::setCharMap(const std::string& charMapFile, int itemWidth, int itemHe
     return true;
 }
 
-Label::Label(TextHAlignment hAlignment /* = TextHAlignment::LEFT */,
-             TextVAlignment vAlignment /* = TextVAlignment::TOP */)
-: _textSprite(nullptr)
+Label::Label()
+: _systemFont("Helvetica")
+, _textSprite(nullptr)
 , _shadowNode(nullptr)
 , _fontAtlas(nullptr)
-, _reusedLetter(nullptr)
 , _horizontalKernings(nullptr)
+, _purgeTextureListener(nullptr)
+, _resetTextureListener(nullptr)
+#if CC_LABEL_DEBUG_DRAW
+, _debugDrawNode(nullptr)
+#endif
+, _fntSpriteFrame(nullptr)
+, _underlineNode(nullptr)
+, _reusedLetter(nullptr)
+, _effectColorF(Color4F::BLACK)
+, _textColor(Color4B::WHITE)
+, _textColorF(Color4F::WHITE)
+, _uniformEffectColor(0)
+, _uniformTextColor(0)
+, _shadowOpacity(0)
+, _blendFunc(BlendFunc::ALPHA_PREMULTIPLIED)
+, _numberOfLines(0)
+, _lengthOfString(0)
+, _outlineSize(0.0f)
+, _systemFontSize(12.0f)
+, _lineHeight(0.0f)
+, _lineSpacing(0.0f)
+, _additionalKerning(0.0f)
+, _maxLineWidth(0.0f)
+, _labelWidth(0.0f)
+, _labelHeight(0.0f)
+, _textDesiredHeight(0.0f)
+, _letterOffsetY(0.0f)
+, _tailoredTopY(0.0f)
+, _tailoredBottomY(0.0f)
+, _shadowBlurRadius(0.0f)
+, _bmFontSize(-1.0f)
+, _bmfontScale(1.0f)
+, _originalFontSize(0.0f)
+, _currLabelEffect(LabelEffect::NORMAL)
+, _currentLabelType(LabelType::STRING_TEXTURE)
+, _overflow(Overflow::NONE)
+, _hAlignment(TextHAlignment::LEFT)
+, _vAlignment(TextVAlignment::TOP)
+, _systemFontDirty(false)
+, _contentDirty(false)
+, _lineBreakWithoutSpaces(false)
 , _boldEnabled(false)
 , _italicsEnabled(false)
-, _underlineNode(nullptr)
 , _strikethroughEnabled(false)
-, _fntSpriteFrame(nullptr)
+, _insideBounds(true)
+, _isOpacityModifyRGB(false)
+, _enableWrap(true)
+, _clipEnabled(false)
+, _blendFuncDirty(false)
+, _useDistanceField(false)
+, _useA8Shader(false)
+, _shadowDirty(false)
+, _shadowEnabled(false)
 {
     setAnchorPoint(Vec2::ANCHOR_MIDDLE);
-    reset();
-    _hAlignment = hAlignment;
-    _vAlignment = vAlignment;
+    setColor(Color3B::WHITE);
 
 #if CC_LABEL_DEBUG_DRAW
     _debugDrawNode = DrawNode::create();
@@ -429,16 +481,20 @@ Label::Label(TextHAlignment hAlignment /* = TextHAlignment::LEFT */,
 Label::~Label()
 {
     delete [] _horizontalKernings;
+    _horizontalKernings = nullptr;
 
-    if (_fontAtlas)
+    if (_fontAtlas != nullptr)
     {
-        Node::removeAllChildrenWithCleanup(true);
+//        Node::removeAllChildrenWithCleanup(true);
         CC_SAFE_RELEASE_NULL(_reusedLetter);
         _batchNodes.clear();
         FontAtlasCache::releaseFontAtlas(_fontAtlas);
+        _fontAtlas = nullptr;
     }
     _eventDispatcher->removeEventListener(_purgeTextureListener);
+    _purgeTextureListener = nullptr;
     _eventDispatcher->removeEventListener(_resetTextureListener);
+    _resetTextureListener = nullptr;
 
     CC_SAFE_RELEASE_NULL(_textSprite);
     CC_SAFE_RELEASE_NULL(_shadowNode);
@@ -527,7 +583,7 @@ void Label::reset()
 
 //  ETC1 ALPHA supports, for LabelType::BMFONT & LabelType::CHARMAP
 static Texture2D* _getTexture(Label* label)
- {
+{
     struct _FontAtlasPub : public FontAtlas
     {
         Texture2D* getTexture()
@@ -1616,13 +1672,18 @@ void Label::draw(Renderer *renderer, const Mat4 &transform, uint32_t flags)
     {
         return;
     }
-    // Don't do calculate the culling if the transform was not updated
-    bool transformUpdated = flags & FLAGS_TRANSFORM_DIRTY;
-#if CC_USE_CULLING
-    _insideBounds = transformUpdated ? renderer->checkVisibility(transform, _contentSize) : _insideBounds;
+
+    if (_director->isCullingEnabled()) {
+        // Don't calculate the culling if the transform was not updated
+        if (flags & FLAGS_TRANSFORM_DIRTY || flags & FLAGS_CULLING_DIRTY) {
+            _insideBounds = renderer->checkVisibility(transform, _contentSize);
+        }
+    }
+    else {
+        _insideBounds = true;
+    }
 
     if (_insideBounds)
-#endif
     {
         if (!_shadowEnabled && (_currentLabelType == LabelType::BMFONT || _currentLabelType == LabelType::CHARMAP))
         {
@@ -1640,7 +1701,7 @@ void Label::draw(Renderer *renderer, const Mat4 &transform, uint32_t flags)
         else
         {
             _customCommand.init(_globalZOrder, transform, flags);
-            _customCommand.func = CC_CALLBACK_0(Label::onDraw, this, transform, transformUpdated);
+            _customCommand.func = CC_CALLBACK_0(Label::onDraw, this, transform, flags & FLAGS_TRANSFORM_DIRTY);
 
             renderer->addCommand(&_customCommand);
         }
@@ -1679,8 +1740,7 @@ void Label::visit(Renderer *renderer, const Mat4 &parentTransform, uint32_t pare
     // IMPORTANT:
     // To ease the migration to v3.0, we still support the Mat4 stack,
     // but it is deprecated and your code should not rely on it
-    _director->pushMatrix(MATRIX_STACK_TYPE::MATRIX_STACK_MODELVIEW);
-    _director->loadMatrix(MATRIX_STACK_TYPE::MATRIX_STACK_MODELVIEW, _modelViewTransform);
+    _director->pushMatrix(MATRIX_STACK_TYPE::MATRIX_STACK_MODELVIEW, _modelViewTransform);
 
     if (!_children.empty())
     {

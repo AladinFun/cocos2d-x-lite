@@ -88,6 +88,10 @@ public:
 #endif
 
 private:
+    virtual ~EventTouch() {}
+
+    void reset();
+
     EventCode _eventCode;
     std::vector<Touch*> _touches;
 

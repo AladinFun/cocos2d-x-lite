@@ -29,7 +29,6 @@ THE SOFTWARE.
 #include "base/CCDirector.h"
 #include "base/ccUTF8.h"
 #include "renderer/CCRenderer.h"
-#include "renderer/CCFrameBuffer.h"
 
 NS_CC_BEGIN
 
@@ -113,18 +112,6 @@ void Scene::render(Renderer* renderer, const Mat4& eyeTransform, const Mat4* eye
 void Scene::removeAllChildren()
 {
     Node::removeAllChildren();
-}
-
-void Scene::cleanup()
-{
-    Node::cleanup();
-#if CC_ENABLE_GC_FOR_NATIVE_OBJECTS
-    auto sEngine = ScriptEngineManager::getInstance()->getScriptEngine();
-    if (sEngine)
-    {
-        sEngine->releaseAllChildrenRecursive(this);
-    }
-#endif // CC_ENABLE_GC_FOR_NATIVE_OBJECTS
 }
 
 NS_CC_END

@@ -204,7 +204,7 @@ public:
 private:
     // The following callback functions are invoked in websocket thread
     void onClientOpenConnectionRequest();
-    int onSocketCallback(struct lws *wsi, int reason, void *in, ssize_t len);
+    int onSocketCallback(struct lws *wsi, enum lws_callback_reasons reason, void* in, ssize_t len);
 
     int onClientWritable();
     int onClientReceivedData(void* in, ssize_t len);
@@ -372,7 +372,7 @@ private:
 class WebSocketCallbackWrapper {
 public:
 
-    static int onSocketCallback(struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in, size_t len)
+    static int onSocketCallback(struct lws *wsi, enum lws_callback_reasons reason, void* user, void* in, size_t len)
     {
         // Gets the user data from context. We know that it's a 'WebSocket' instance.
         if (wsi == nullptr) {
@@ -613,13 +613,18 @@ WebSocketImpl::WebSocketImpl(cocos2d::network::WebSocket* ws)
     }
 
     __websocketInstances->push_back(this);
-    
-    std::shared_ptr<std::atomic<bool>> isDestroyed = _isDestroyed;
-    _resetDirectorListener = cocos2d::Director::getInstance()->getEventDispatcher()->addCustomEventListener(cocos2d::Director::EVENT_RESET, [this, isDestroyed](cocos2d::EventCustom*){
-        if (*isDestroyed)
-            return;
-        close();
-    });
+
+// NOTE: !!! Be careful while merging cocos2d-x-lite back to cocos2d-x. !!!
+// 'close' is a synchronous operation which may wait some seconds to make sure connection is closed.
+// But JSB doesn't need to listen on EVENT_RESET event to close connection,
+// since finalize callback (refer to 'WebSocket_finalize' function in jsb_websocket.cpp) will invoke 'closeAsync'.
+//
+//    std::shared_ptr<std::atomic<bool>> isDestroyed = _isDestroyed;
+//    _resetDirectorListener = cocos2d::Director::getInstance()->getEventDispatcher()->addCustomEventListener(cocos2d::Director::EVENT_RESET, [this, isDestroyed](cocos2d::EventCustom*){
+//        if (*isDestroyed)
+//            return;
+//        close();
+//    });
 }
 
 WebSocketImpl::~WebSocketImpl()
@@ -651,8 +656,9 @@ WebSocketImpl::~WebSocketImpl()
         CC_SAFE_DELETE(__wsHelper);
     }
 
-    cocos2d::Director::getInstance()->getEventDispatcher()->removeEventListener(_resetDirectorListener);
-    
+// NOTE: Refer to the comment in constructor!!!
+//    cocos2d::Director::getInstance()->getEventDispatcher()->removeEventListener(_resetDirectorListener);
+
     *_isDestroyed = true;
 }
 
@@ -1377,9 +1383,7 @@ int WebSocketImpl::onConnectionClosed()
     return 0;
 }
 
-int WebSocketImpl::onSocketCallback(struct lws *wsi,
-                     int reason,
-                     void *in, ssize_t len)
+int WebSocketImpl::onSocketCallback(struct lws *wsi, enum lws_callback_reasons reason, void* in, ssize_t len)
 {
     //LOGD("socket callback for %d reason\n", reason);
 

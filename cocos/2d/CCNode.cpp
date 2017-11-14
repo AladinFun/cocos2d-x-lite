@@ -41,7 +41,6 @@ THE SOFTWARE.
 #include "2d/CCComponent.h"
 #include "renderer/CCGLProgram.h"
 #include "renderer/CCGLProgramState.h"
-#include "renderer/CCMaterial.h"
 #include "math/TransformUtils.h"
 
 #include "editor-support/creator/CCCameraNode.h"
@@ -62,7 +61,9 @@ unsigned int Node::s_globalOrderOfArrival = 0;
 // MARK: Constructor, Destructor, Init
 
 Node::Node()
-: _rotationX(0.0f)
+: _beforeVisitCallback(nullptr)
+, _afterVisitCallback(nullptr)
+, _rotationX(0.0f)
 , _rotationY(0.0f)
 , _rotationZ_X(0.0f)
 , _rotationZ_Y(0.0f)
@@ -81,6 +82,7 @@ Node::Node()
 , _additionalTransform(nullptr)
 , _additionalTransformDirty(false)
 , _transformUpdated(true)
+, _cullingDirty(true)
 // children (lazy allocs)
 // lazy alloc
 , _localZOrderAndArrival(0)
@@ -100,9 +102,9 @@ Node::Node()
 , _ignoreAnchorPointForPosition(false)
 , _reorderChildDirty(false)
 , _isTransitionFinished(false)
-#if CC_ENABLE_SCRIPT_BINDING
-, _updateScriptHandler(0)
-#endif
+//#if CC_ENABLE_SCRIPT_BINDING
+//, _updateScriptHandler(0)
+//#endif
 , _componentContainer(nullptr)
 , _displayedOpacity(255)
 , _realOpacity(255)
@@ -110,7 +112,7 @@ Node::Node()
 , _realColor(Color3B::WHITE)
 , _cascadeColorEnabled(false)
 , _cascadeOpacityEnabled(false)
-, _cameraMask(1)
+, _cameraMask(0)
 {
     // set default scheduler and actionManager
     _director = Director::getInstance();
@@ -146,12 +148,12 @@ Node::~Node()
 {
     CCLOGINFO( "deallocing Node: %p - tag: %i", this, _tag );
 
-#if CC_ENABLE_SCRIPT_BINDING
-    if (_updateScriptHandler)
-    {
-        ScriptEngineManager::getInstance()->getScriptEngine()->removeScriptHandler(_updateScriptHandler);
-    }
-#endif
+//#if CC_ENABLE_SCRIPT_BINDING
+//    if (_updateScriptHandler)
+//    {
+//        ScriptEngineManager::getInstance()->getScriptEngine()->removeScriptHandler(_updateScriptHandler);
+//    }
+//#endif
 
     // User object has to be released before others, since userObject may have a weak reference of this node
     // It may invoke `node->stopAllAction();` while `_actionManager` is null if the next line is after `CC_SAFE_RELEASE_NULL(_actionManager)`.
@@ -666,6 +668,17 @@ void Node::setGLProgramState(cocos2d::GLProgramState* glProgramState)
 {
     if (glProgramState != _glProgramState)
     {
+#if CC_ENABLE_GC_FOR_NATIVE_OBJECTS
+        auto sEngine = ScriptEngineManager::getInstance()->getScriptEngine();
+        if (sEngine)
+        {
+            if (glProgramState)
+                sEngine->retainScriptObject(this, glProgramState);
+            if (_glProgramState)
+                sEngine->releaseScriptObject(this, _glProgramState);
+        }
+#endif // CC_ENABLE_GC_FOR_NATIVE_OBJECTS
+
         CC_SAFE_RELEASE(_glProgramState);
         _glProgramState = glProgramState;
         CC_SAFE_RETAIN(_glProgramState);
@@ -1095,7 +1108,7 @@ void Node::removeAllChildrenWithCleanup(bool cleanup)
             sEngine->releaseScriptObject(this, child);
         }
 #endif // CC_ENABLE_GC_FOR_NATIVE_OBJECTS
-        // set parent nil at the end
+        // set parent nullptr at the end
         child->setParent(nullptr);
     }
 
@@ -1204,6 +1217,7 @@ uint32_t Node::processParentFlags(const Mat4& parentTransform, uint32_t parentFl
     uint32_t flags = parentFlags;
     flags |= (_transformUpdated ? FLAGS_TRANSFORM_DIRTY : 0);
     flags |= (_contentSizeDirty ? FLAGS_CONTENT_SIZE_DIRTY : 0);
+    flags |= (_cullingDirty ? FLAGS_CULLING_DIRTY : 0);
 
 
     if(flags & FLAGS_DIRTY_MASK)
@@ -1211,6 +1225,7 @@ uint32_t Node::processParentFlags(const Mat4& parentTransform, uint32_t parentFl
 
     _transformUpdated = false;
     _contentSizeDirty = false;
+    _cullingDirty = false;
 
     return flags;
 }
@@ -1228,8 +1243,8 @@ void Node::visit(Renderer* renderer, const Mat4 &parentTransform, uint32_t paren
         return;
     }
 
-    if (_beforeVisitCallback) {
-        _beforeVisitCallback(renderer);
+    if (_beforeVisitCallback && *_beforeVisitCallback) {
+        (*_beforeVisitCallback)(renderer);
     }
     
     uint32_t flags = processParentFlags(parentTransform, parentFlags);
@@ -1237,20 +1252,18 @@ void Node::visit(Renderer* renderer, const Mat4 &parentTransform, uint32_t paren
     // IMPORTANT:
     // To ease the migration to v3.0, we still support the Mat4 stack,
     // but it is deprecated and your code should not rely on it
-    _director->pushMatrix(MATRIX_STACK_TYPE::MATRIX_STACK_MODELVIEW);
-    _director->loadMatrix(MATRIX_STACK_TYPE::MATRIX_STACK_MODELVIEW, _modelViewTransform);
+    _director->pushMatrix(MATRIX_STACK_TYPE::MATRIX_STACK_MODELVIEW, _modelViewTransform);
 
     auto camera = creator::CameraNode::getInstance();
     if (camera) {
         if (camera->visitingIndex <= 0) {
-            if (camera->containsNode(this)) {
+            if (_cameraMask > 0) {
                 camera->visitingIndex ++;
             }
         }
         else {
             camera->visitingIndex ++;
         }
-        
     }
     
     if(!_children.empty())
@@ -1285,8 +1298,8 @@ void Node::visit(Renderer* renderer, const Mat4 &parentTransform, uint32_t paren
 
     _director->popMatrix(MATRIX_STACK_TYPE::MATRIX_STACK_MODELVIEW);
     
-    if (_afterVisitCallback) {
-        _afterVisitCallback(renderer);
+    if (_afterVisitCallback && *_afterVisitCallback) {
+        (*_afterVisitCallback)(renderer);
     }
 }
 
@@ -1307,8 +1320,8 @@ void Node::onEnter()
     }
 #endif
 
-    if (_onEnterCallback)
-        _onEnterCallback();
+//    if (_onEnterCallback)
+//        _onEnterCallback();
 
     if (_componentContainer && !_componentContainer->isEmpty())
     {
@@ -1342,8 +1355,8 @@ void Node::onEnterTransitionDidFinish()
     }
 #endif
 
-    if (_onEnterTransitionDidFinishCallback)
-        _onEnterTransitionDidFinishCallback();
+//    if (_onEnterTransitionDidFinishCallback)
+//        _onEnterTransitionDidFinishCallback();
 
     _isTransitionFinished = true;
     for( const auto &child: _children)
@@ -1367,8 +1380,8 @@ void Node::onExitTransitionDidStart()
     }
 #endif
 
-    if (_onExitTransitionDidStartCallback)
-        _onExitTransitionDidStartCallback();
+//    if (_onExitTransitionDidStartCallback)
+//        _onExitTransitionDidStartCallback();
 
     for( const auto &child: _children)
         child->onExitTransitionDidStart();
@@ -1391,8 +1404,8 @@ void Node::onExit()
     }
 #endif
 
-    if (_onExitCallback)
-        _onExitCallback();
+//    if (_onExitCallback)
+//        _onExitCallback();
 
     if (_componentContainer && !_componentContainer->isEmpty())
     {
@@ -1518,28 +1531,28 @@ void Node::scheduleUpdateWithPriority(int priority)
     _scheduler->scheduleUpdate(this, priority, !_running);
 }
 
-void Node::scheduleUpdateWithPriorityLua(int nHandler, int priority)
-{
-    unscheduleUpdate();
-
-#if CC_ENABLE_SCRIPT_BINDING
-    _updateScriptHandler = nHandler;
-#endif
-
-    _scheduler->scheduleUpdate(this, priority, !_running);
-}
+//void Node::scheduleUpdateWithPriorityLua(int nHandler, int priority)
+//{
+//    unscheduleUpdate();
+//
+//#if CC_ENABLE_SCRIPT_BINDING
+//    _updateScriptHandler = nHandler;
+//#endif
+//
+//    _scheduler->scheduleUpdate(this, priority, !_running);
+//}
 
 void Node::unscheduleUpdate()
 {
     _scheduler->unscheduleUpdate(this);
 
-#if CC_ENABLE_SCRIPT_BINDING
-    if (_updateScriptHandler)
-    {
-        ScriptEngineManager::getInstance()->getScriptEngine()->removeScriptHandler(_updateScriptHandler);
-        _updateScriptHandler = 0;
-    }
-#endif
+//#if CC_ENABLE_SCRIPT_BINDING
+//    if (_updateScriptHandler)
+//    {
+//        ScriptEngineManager::getInstance()->getScriptEngine()->removeScriptHandler(_updateScriptHandler);
+//        _updateScriptHandler = 0;
+//    }
+//#endif
 }
 
 void Node::schedule(SEL_SCHEDULE selector)
@@ -1621,15 +1634,15 @@ void Node::pause()
 // override me
 void Node::update(float fDelta)
 {
-#if CC_ENABLE_SCRIPT_BINDING
-    if (0 != _updateScriptHandler)
-    {
-        //only lua use
-        SchedulerScriptData data(_updateScriptHandler,fDelta);
-        ScriptEvent event(kScheduleEvent,&data);
-        ScriptEngineManager::getInstance()->getScriptEngine()->sendEvent(&event);
-    }
-#endif
+//#if CC_ENABLE_SCRIPT_BINDING
+//    if (0 != _updateScriptHandler)
+//    {
+//        //only lua use
+//        SchedulerScriptData data(_updateScriptHandler,fDelta);
+//        ScriptEvent event(kScheduleEvent,&data);
+//        ScriptEngineManager::getInstance()->getScriptEngine()->sendEvent(&event);
+//    }
+//#endif
 
     if (_componentContainer && !_componentContainer->isEmpty())
     {
@@ -1822,6 +1835,10 @@ void Node::setAdditionalTransform(const Mat4* additionalTransform)
     _transformUpdated = _additionalTransformDirty = _inverseDirty = true;
 }
 
+void Node::setAdditionalTransform(const Mat4& additionalTransform)
+{
+    setAdditionalTransform(&additionalTransform);
+}
 
 AffineTransform Node::getParentToNodeAffineTransform() const
 {
@@ -2132,9 +2149,9 @@ void Node::setCameraMask(unsigned short mask, bool applyChildren)
     }
 }
 
-void Node::markTransformUpdated()
+void Node::markCullingDirty()
 {
-    _transformUpdated = true;
+    _cullingDirty = true;
 }
 
 NS_CC_END

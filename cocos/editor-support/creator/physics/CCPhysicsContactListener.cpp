@@ -4,30 +4,44 @@
 using namespace cocos2d;
 
 namespace creator {
-    
+
+std::vector<PhysicsContactListener*> PhysicsContactListener::__allInstances;
+
+const std::vector<PhysicsContactListener*>& PhysicsContactListener::getAllInstances()
+{
+    return __allInstances;
+}
+
 PhysicsContactListener::PhysicsContactListener() 
 {
+    __allInstances.push_back(this);
 }
 
-PhysicsContactListener::~PhysicsContactListener() {
+PhysicsContactListener::~PhysicsContactListener()
+{
+    auto iter = std::find(__allInstances.begin(), __allInstances.end(), this);
+    if (iter != __allInstances.end())
+    {
+        __allInstances.erase(iter);
+    }
 }
 
-void PhysicsContactListener::setBeginContact(std::function<void(b2Contact* contact)> callback)
+void PhysicsContactListener::setBeginContact(const std::function<void(b2Contact* contact)>& callback)
 {
     _beginContact = callback;
 }
 
-void PhysicsContactListener::setEndContact(std::function<void(b2Contact* contact)> callback)
+void PhysicsContactListener::setEndContact(const std::function<void(b2Contact* contact)>& callback)
 {
     _endContact = callback;
 }
 
-void PhysicsContactListener::setPreSolve(std::function<void(b2Contact* contact)> callback)
+void PhysicsContactListener::setPreSolve(const std::function<void(b2Contact* contact)>& callback)
 {
     _preSolve = callback;
 }
 
-void PhysicsContactListener::setPostSolve(std::function<void(b2Contact* contact, const PhysicsContactImpulse* impulse)> callback)
+void PhysicsContactListener::setPostSolve(const std::function<void(b2Contact* contact, const PhysicsContactImpulse* impulse)>& callback)
 {
     _postSolve = callback;
 }

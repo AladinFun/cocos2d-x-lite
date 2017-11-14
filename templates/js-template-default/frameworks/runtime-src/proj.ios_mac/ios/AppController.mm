@@ -29,6 +29,8 @@
 #import "RootViewController.h"
 #import "platform/ios/CCEAGLView-ios.h"
 
+#import "cocos-analytics/CAAgent.h"
+
 using namespace cocos2d;
 
 @implementation AppController
@@ -39,13 +41,15 @@ using namespace cocos2d;
 #pragma mark Application lifecycle
 
 // cocos2d application instance
-static AppDelegate *s_sharedApplication = nullptr;
+static AppDelegate* s_sharedApplication = nullptr;
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
 
+    [CAAgent enableDebug:NO];
+
     if (s_sharedApplication == nullptr)
     {
-        s_sharedApplication = new AppDelegate();
+        s_sharedApplication = new (std::nothrow) AppDelegate();
     }
     cocos2d::Application *app = cocos2d::Application::getInstance();
 
@@ -113,6 +117,7 @@ static AppDelegate *s_sharedApplication = nullptr;
       If your application supports background execution, called instead of applicationWillTerminate: when the user quits.
     */
     cocos2d::Application::getInstance()->applicationDidEnterBackground();
+    [CAAgent onPause];
 }
 
 - (void)applicationWillEnterForeground:(UIApplication *)application {
@@ -124,6 +129,7 @@ static AppDelegate *s_sharedApplication = nullptr;
     if (glview == currentView) {
         cocos2d::Application::getInstance()->applicationWillEnterForeground();
     }
+    [CAAgent onResume];
 }
 
 - (void)applicationWillTerminate:(UIApplication *)application {
@@ -131,11 +137,12 @@ static AppDelegate *s_sharedApplication = nullptr;
       Called when the application is about to terminate.
       See also applicationDidEnterBackground:.
     */
-    if (s_sharedApplication)
+    if (s_sharedApplication != nullptr)
     {
         delete s_sharedApplication;
         s_sharedApplication = nullptr;
     }
+    [CAAgent onDestroy];
 }
 
 

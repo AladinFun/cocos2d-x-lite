@@ -13,19 +13,36 @@
 using namespace cocos2d;
 
 namespace creator {
-    static CameraNode* _cameraInstance;
+    static CameraNode* _cameraInstance = nullptr;
     
     
     CameraNode::CameraNode()
     {
         _mat.setIdentity();
-        _cameraInstance = this;
         visitingIndex = 0;
     }
     
     CameraNode::~CameraNode()
     {
-        _cameraInstance = nullptr;
+        if (!_commands.empty())
+        {
+            for (const auto& c : _commands)
+            {
+                delete c.beforeVisitCommand;
+                delete c.afterVisitCommand;
+            }
+            _commands.clear();
+        }
+    }
+    
+    void CameraNode::setEnable(bool enable)
+    {
+        if (enable) {
+            _cameraInstance = this;
+        }
+        else {
+            _cameraInstance = nullptr;
+        }
     }
     
     CameraNode* CameraNode::getInstance() {
@@ -75,6 +92,7 @@ namespace creator {
         }
         
         _nodes.push_back(target);
+        target->setCameraMask(1, false);
         
         CustomCommand* beforeVisitCommand = new CustomCommand();
         CustomCommand* afterVisitCommand = new CustomCommand();
@@ -98,6 +116,7 @@ namespace creator {
     {
         target->setBeforeVisitCallback(nullptr);
         target->setAfterVisitCallback(nullptr);
+        target->setCameraMask(0, false);
         
         for (auto i = _commands.begin(); i != _commands.end(); i++)
         {

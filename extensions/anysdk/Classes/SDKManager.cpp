@@ -2,7 +2,7 @@
 
 using namespace anysdk::framework;
 
-SDKManager* SDKManager::_pInstance = NULL;
+SDKManager* SDKManager::_pInstance = nullptr;
 
 SDKManager::SDKManager()
 {
@@ -10,15 +10,13 @@ SDKManager::SDKManager()
 
 SDKManager::~SDKManager()
 {
-	if (_pAgent)
-    {
-        _pAgent->unloadAllPlugins();
-    }
+    AgentManager::getInstance()->unloadAllPlugins();
+    AgentManager::end();
 }
 
 SDKManager* SDKManager::getInstance()
 {
-    if (_pInstance == NULL) {
+    if (_pInstance == nullptr) {
         _pInstance = new SDKManager();
     }
     return _pInstance;
@@ -26,10 +24,10 @@ SDKManager* SDKManager::getInstance()
 
 void SDKManager::purge()
 {
-    if (_pInstance)
+    if (_pInstance != nullptr)
     {
         delete _pInstance;
-        _pInstance = NULL;
+        _pInstance = nullptr;
     }
 }
 
@@ -46,11 +44,11 @@ void SDKManager::loadAllPlugins()
     std::string appSecret = "APP_SERCRET";
     std::string privateKey = "PRIVATE_KEY";
     
-    _pAgent = AgentManager::getInstance();
-    _pAgent->init(appKey,appSecret,privateKey,oauthLoginServer);
+    AgentManager* pAgent = AgentManager::getInstance();
+    pAgent->init(appKey,appSecret,privateKey,oauthLoginServer);
     
     //Initialize plug-ins, including SDKs.
-    _pAgent->loadAllPlugins();
+    pAgent->loadAllPlugins();
 }
 
 
