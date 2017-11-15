@@ -45,7 +45,9 @@ namespace creator {
         CameraNode();
         ~CameraNode();
         
-        static CameraNode* getInstance();
+		static CameraNode* getInstance();
+		
+		void setEnable(bool enable);
         
         void setTransform(float a, float b, float c, float d, float tx, float ty);
         

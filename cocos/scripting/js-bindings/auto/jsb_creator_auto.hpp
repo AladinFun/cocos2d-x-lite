@@ -187,5 +187,6 @@ bool js_creator_CameraNode_containsNode(JSContext *cx, uint32_t argc, JS::Value 
 bool js_creator_CameraNode_addTarget(JSContext *cx, uint32_t argc, JS::Value *vp);
 bool js_creator_CameraNode_getInstance(JSContext *cx, uint32_t argc, JS::Value *vp);
 bool js_creator_CameraNode_CameraNode(JSContext *cx, uint32_t argc, JS::Value *vp);
+bool js_creator_CameraNode_setEnable(JSContext *cx, uint32_t argc, JS::Value *vp);
 
 #endif // __creator_h__

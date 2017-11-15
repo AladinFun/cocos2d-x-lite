@@ -2986,6 +2986,24 @@ bool js_creator_CameraNode_addTarget(JSContext *cx, uint32_t argc, JS::Value *vp
     JS_ReportErrorUTF8(cx, "js_creator_CameraNode_addTarget : wrong number of arguments: %d, was expecting %d", argc, 1);
     return false;
 }
+bool js_creator_CameraNode_setEnable(JSContext *cx, uint32_t argc, JS::Value *vp) {
+	JS::CallArgs args = JS::CallArgsFromVp(argc, vp);
+	bool ok = true; CC_UNUSED_PARAM(ok);
+	JS::RootedObject obj(cx, args.thisv().toObjectOrNull());
+	js_proxy_t *proxy = jsb_get_js_proxy(cx, obj);
+	creator::CameraNode* cobj = (creator::CameraNode *)(proxy ? proxy->ptr : NULL);
+	JSB_PRECONDITION2( cobj, cx, false, "js_creator_CameraNode_setEnable : Invalid Native Object");
+	if (argc == 1) {
+		bool arg0;
+		ok &= jsval_to_bool(cx, args.get(0), &arg0);
+		JSB_PRECONDITION2(ok, cx, false, "js_creator_CameraNode_setEnable : Error processing arguments");
+		cobj->setEnable(arg0);
+		args.rval().setUndefined();
+		return true;
+	}
+	JS_ReportErrorUTF8(cx, "js_creator_CameraNode_setEnable : wrong number of arguments: %d, was expecting %d", argc, 1);
+	return false;
+}
 bool js_creator_CameraNode_getInstance(JSContext *cx, uint32_t argc, JS::Value *vp)
 {
     JS::CallArgs args = JS::CallArgsFromVp(argc, vp);
@@ -3049,7 +3067,8 @@ void js_register_creator_CameraNode(JSContext *cx, JS::HandleObject global) {
         JS_FN("setTransform", js_creator_CameraNode_setTransform, 6, JSPROP_PERMANENT | JSPROP_ENUMERATE),
         JS_FN("getVisibleRect", js_creator_CameraNode_getVisibleRect, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
         JS_FN("containsNode", js_creator_CameraNode_containsNode, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
-        JS_FN("addTarget", js_creator_CameraNode_addTarget, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
+		JS_FN("addTarget", js_creator_CameraNode_addTarget, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
+		JS_FN("setEnable", js_creator_CameraNode_setEnable, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
         JS_FS_END
     };
 
@@ -3078,6 +3097,7 @@ void js_register_creator_CameraNode(JSContext *cx, JS::HandleObject global) {
     JS_SetProperty(cx, proto, "__nativeObj", JS::TrueHandleValue);
     JS_SetProperty(cx, proto, "__is_ref", JS::TrueHandleValue);
 }
+
 
 void register_all_creator(JSContext* cx, JS::HandleObject obj) {
     // Get the ns
