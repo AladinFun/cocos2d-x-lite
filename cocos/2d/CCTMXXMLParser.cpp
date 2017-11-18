@@ -34,6 +34,7 @@ THE SOFTWARE.
 #include "base/base64.h"
 #include "base/CCDirector.h"
 #include "platform/CCFileUtils.h"
+#include <stdlib.h>
 
 using namespace std;
 
@@ -407,7 +408,7 @@ void TMXMapInfo::startElement(void *ctx, const char *name, const char **atts)
         positionOffset.x = attributeDict["offsetx"].asFloat();
         positionOffset.y = attributeDict["offsety"].asFloat();
         objectGroup->_positionOffset = CC_POINT_PIXELS_TO_POINTS(positionOffset);
-        
+
         // object group color
         Value& colorValue = attributeDict["color"];
         if (colorValue.isNull()) {
@@ -427,15 +428,15 @@ void TMXMapInfo::startElement(void *ctx, const char *name, const char **atts)
             int r = num / 0x10000;
             int g = (num / 0x100) % 0x100;
             int b = num % 0x100;
-            
+
             objectGroup->_color = Color3B(r, g, b);
         }
-        
+
         // object group opacity
         Value& opacityValue = attributeDict["opacity"];
         float percent = opacityValue.isNull() ? 1.0 : opacityValue.asFloat();
         objectGroup->_opacity = 255 * percent;
-        
+
         // object group visible
         Value& visibleValue = attributeDict["visible"];
         objectGroup->_visible = visibleValue.isNull() ? true : visibleValue.asBool();
@@ -540,16 +541,16 @@ void TMXMapInfo::startElement(void *ctx, const char *name, const char **atts)
 
         dict["x"] = Value(x);
         dict["y"] = Value(y);
-        
+
         int width = attributeDict["width"].asFloat();
         int height = attributeDict["height"].asFloat();
         dict["width"] = Value(width);
         dict["height"] = Value(height);
-        
+
         // visible
         Value& visibleValue = attributeDict["visible"];
         dict["visible"] = Value(visibleValue.isNull() ? true : visibleValue.asBool());
-        
+
         // rotation
         Value& rotationValue = attributeDict["rotation"];
         dict["rotation"] = Value(rotationValue.isNull() ? 0.0 : rotationValue.asFloat());
@@ -764,12 +765,12 @@ void TMXMapInfo::endElement(void *ctx, const char *name)
         else if (tmxMapInfo->getLayerAttribs() & TMXLayerAttribCSV)
         {
             unsigned char *buffer;
-            
+
             TMXLayerInfo* layer = tmxMapInfo->getLayers().back();
-            
+
             tmxMapInfo->setStoringCharacters(false);
             std::string currentString = tmxMapInfo->getCurrentString();
-            
+
             vector<string> gidTokens;
             istringstream filestr(currentString);
             string sRow;
@@ -780,7 +781,7 @@ void TMXMapInfo::endElement(void *ctx, const char *name)
                     gidTokens.push_back(sGID);
                 }
             }
-            
+
             // 32-bits per gid
             buffer = (unsigned char*)malloc(gidTokens.size() * 4);
             if (!buffer)
@@ -788,16 +789,16 @@ void TMXMapInfo::endElement(void *ctx, const char *name)
                 CCLOG("cocos2d: TiledMap: CSV buffer not allocated.");
                 return;
             }
-            
+
             uint32_t* bufferPtr = reinterpret_cast<uint32_t*>(buffer);
             for(auto gidToken : gidTokens) {
                 auto tileGid = (uint32_t)strtol(gidToken.c_str(), nullptr, 10);
                 *bufferPtr = tileGid;
                 bufferPtr++;
             }
-            
+
             layer->_tiles = reinterpret_cast<uint32_t*>(buffer);
-            
+
             tmxMapInfo->setCurrentString("");
         }
         else if (tmxMapInfo->getLayerAttribs() & TMXLayerAttribNone)

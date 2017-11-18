@@ -2,7 +2,7 @@ apply plugin: 'com.android.library'
 
 android {
     compileSdkVersion 22
-    buildToolsVersion '26.0.2'
+    buildToolsVersion '26.0.3'
 
 	defaultConfig {
 		minSdkVersion 10
@@ -27,6 +27,6 @@ android {
 }
 
 dependencies {
-	compile fileTree(dir: '../java/libs', include: ['com.android.vending.expansion.zipfile.jar'])
+	compile fileTree(dir: '../java/libs', include: ['com.android.vending.expansion.zipfile.jar', 'libcocosanalytics.jar'])
 	compile 'com.loopj.android:android-async-http:1.4.9'
 }

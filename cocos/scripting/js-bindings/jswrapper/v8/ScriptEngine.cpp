@@ -30,6 +30,7 @@
 #include "Utils.hpp"
 #include "../State.hpp"
 #include "../MappingUtils.hpp"
+#include <cstring>
 
 #if SE_ENABLE_INSPECTOR
 #include "inspector_agent.h"

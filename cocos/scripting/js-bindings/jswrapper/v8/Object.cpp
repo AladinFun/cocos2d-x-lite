@@ -28,11 +28,12 @@
 #include "Class.hpp"
 #include "ScriptEngine.hpp"
 #include "../MappingUtils.hpp"
+#include <cstring>
 
 namespace se {
 
     std::unordered_map<Object*, void*> __objectMap; // Currently, the value `void*` is always nullptr
-    
+
     namespace {
         v8::Isolate* __isolate = nullptr;
     }
@@ -208,7 +209,7 @@ namespace se {
         Object* obj = Object::_createJSObject(nullptr, jsobj);
         return obj;
     }
-    
+
     Object* Object::createTypedArray(TypedArrayType type, void* data, size_t byteLength)
     {
         if (type == TypedArrayType::NONE)

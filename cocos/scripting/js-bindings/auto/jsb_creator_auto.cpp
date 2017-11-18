@@ -683,7 +683,7 @@ static bool js_creator_Scale9SpriteV2_ctor(se::State& s)
 SE_BIND_SUB_CLS_CTOR(js_creator_Scale9SpriteV2_ctor, __jsb_creator_Scale9SpriteV2_class, js_creator_Scale9SpriteV2_finalize)
 
 
-    
+
 
 extern se::Object* __jsb_cocos2d_Node_proto;
 

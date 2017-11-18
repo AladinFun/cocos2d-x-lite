@@ -55,6 +55,7 @@ THE SOFTWARE.
 #include "base/ccUTF8.h"
 #include "renderer/CCTextureCache.h"
 #include "platform/CCFileUtils.h"
+#include <stdlib.h>
 
 using namespace std;
 
@@ -513,7 +514,7 @@ bool ParticleSystem::initWithDictionary(ValueMap& dictionary, const std::string&
                         bool isOK = image->initWithImageData(deflated, deflatedLen);
                         CCASSERT(isOK, "CCParticleSystem: error init image with Data");
                         CC_BREAK_IF(!isOK);
-                        
+
                         setTexture(Director::getInstance()->getTextureCache()->addImage(image, _plistFile + textureName));
 
                         image->release();
@@ -714,7 +715,7 @@ dc[i] = (dc[i] - c[i]) / _particleData.timeToLive[i];\
         {
             _particleData.modeA.tangentialAccel[i] = modeA.tangentialAccel + modeA.tangentialAccelVar * RANDOM_M11(&RANDSEED);
         }
-        
+
         // rotation is dir
         if( modeA.rotationIsDir )
         {
@@ -944,7 +945,7 @@ void ParticleSystem::update(float dt)
             //it first checks whether a copy of that data is in the cache.
             //And every property's memory of the particle system is continuous,
             //for the purpose of improving cache hit rate, we should process only one property in one for-loop AFAP.
-            //It was proved to be effective especially for low-end machine. 
+            //It was proved to be effective especially for low-end machine.
             for (int i = 0; i < _particleCount; ++i)
             {
                 _particleData.modeB.angle[i] += _particleData.modeB.degreesPerSecond[i] * dt;

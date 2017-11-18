@@ -42,6 +42,8 @@ THE SOFTWARE.
 #endif
 #include <sys/stat.h>
 
+#include <stdlib.h>
+
 NS_CC_BEGIN
 
 // Implement DictMaker
@@ -1058,7 +1060,7 @@ std::vector<std::string> FileUtils::listFiles(const std::string& dirPath) const
                     // Error getting file
                     break;
                 }
-                
+
 #ifdef UNICODE
                 std::wstring path = file.path;
                 length = WideCharToMultiByte(CP_UTF8, 0, &path[0], (int)path.size(), NULL, 0, NULL, NULL);
@@ -1076,7 +1078,7 @@ std::vector<std::string> FileUtils::listFiles(const std::string& dirPath) const
                     filepath.append("/");
                 }
                 files.push_back(filepath);
-                
+
                 if (tinydir_next(&dir) == -1)
                 {
                     // Error getting next file
@@ -1142,7 +1144,7 @@ void FileUtils::listFilesRecursively(const std::string& dirPath, std::vector<std
                         files->push_back(filepath);
                     }
                 }
-                
+
                 if (tinydir_next(&dir) == -1)
                 {
                     // Error getting next file
@@ -1294,10 +1296,10 @@ namespace
     int unlink_cb(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf)
     {
         int rv = remove(fpath);
-        
+
         if (rv)
             perror(fpath);
-        
+
         return rv;
     }
 #endif

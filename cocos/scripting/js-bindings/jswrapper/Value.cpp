@@ -23,6 +23,7 @@
  ****************************************************************************/
 #include "Value.hpp"
 #include "Object.hpp"
+#include <cstring>
 
 namespace se {
 
