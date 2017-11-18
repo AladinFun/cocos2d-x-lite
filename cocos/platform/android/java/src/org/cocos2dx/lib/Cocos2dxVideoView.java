@@ -410,9 +410,9 @@ public class Cocos2dxVideoView extends SurfaceView implements MediaPlayerControl
                 mMetaUpdated = true;
             }
 
-            if (mTargetState == STATE_PLAYING) {
+            // if (mTargetState == STATE_PLAYING) {
                 start();
-            }
+            // }
         }
     };
 
