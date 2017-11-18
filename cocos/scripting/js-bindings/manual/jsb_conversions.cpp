@@ -218,13 +218,8 @@ bool seval_to_ssize(const se::Value& v, ssize_t* ret)
 bool seval_to_std_string(const se::Value& v, std::string* ret)
 {
     assert(ret != nullptr);
-    if (v.isString() || v.isNumber())
-    {
-        *ret = v.toStringForce();
-        return true;
-    }
-    ret->clear();
-    return false;
+    *ret = v.toStringForce();
+    return true;
 }
 
 bool seval_to_Vec2(const se::Value& v, cocos2d::Vec2* pt)
@@ -469,6 +464,10 @@ bool seval_to_ccvalue(const se::Value& v, cocos2d::Value* ret)
     else if (v.isBoolean())
     {
         *ret = v.toBoolean();
+    }
+    else if (v.isNullOrUndefined())
+    {
+        *ret = cocos2d::Value::Null;
     }
     else
     {
@@ -1393,6 +1392,12 @@ bool ccvalue_to_seval(const cocos2d::Value& v, se::Value* ret)
     bool ok = true;
     switch (v.getType())
     {
+        case cocos2d::Value::Type::NONE:
+            ret->setNull();
+            break;
+        case cocos2d::Value::Type::UNSIGNED:
+            ret->setUint32(v.asUnsignedInt());
+            break;
         case cocos2d::Value::Type::BOOLEAN:
             ret->setBoolean(v.asBool());
             break;
@@ -1416,6 +1421,7 @@ bool ccvalue_to_seval(const cocos2d::Value& v, se::Value* ret)
             ok = ccvaluemapintkey_to_seval(v.asIntKeyMap(), ret);
             break;
         default:
+            SE_LOGE("Could not the way to convert cocos2d::Value::Type (%d) type!", (int)v.getType());
             ok = false;
             break;
     }
