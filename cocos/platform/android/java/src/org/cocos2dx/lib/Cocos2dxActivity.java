@@ -24,7 +24,6 @@ THE SOFTWARE.
  ****************************************************************************/
 package org.cocos2dx.lib;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
@@ -34,18 +33,14 @@ import android.media.AudioManager;
 import android.opengl.GLSurfaceView;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
 import android.os.Message;
 import android.preference.PreferenceManager.OnActivityResultListener;
-import android.util.AttributeSet;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
-import android.view.ViewGroup;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
-import android.widget.FrameLayout;
-
-import com.cocos.analytics.CAAgent;
 
 import org.cocos2dx.lib.Cocos2dxHelper.Cocos2dxHelperListener;
 
@@ -53,7 +48,7 @@ import javax.microedition.khronos.egl.EGL10;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.egl.EGLDisplay;
 
-public abstract class Cocos2dxActivity extends Activity implements Cocos2dxHelperListener {
+public abstract class Cocos2dxActivity extends AppCompatActivity implements Cocos2dxHelperListener {
     // ===========================================================
     // Constants
     // ===========================================================
@@ -274,8 +269,6 @@ public abstract class Cocos2dxActivity extends Activity implements Cocos2dxHelpe
 
         this.hideVirtualButton();
 
-        CAAgent.enableDebug(false);
-
         onLoadNativeLibraries();
 
         sContext = this;
@@ -352,7 +345,6 @@ public abstract class Cocos2dxActivity extends Activity implements Cocos2dxHelpe
     @Override
     protected void onDestroy() {
         Cocos2dxAudioFocusManager.unregisterAudioFocusListener(this);
-        CAAgent.onDestroy();
         super.onDestroy();
     }
 

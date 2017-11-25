@@ -1,6 +1,8 @@
 # Ignore thumbnails created by windows
 Thumbs.db
 
+tools/simulator/publish/
+
 # Ignore npm files
 /node_modules
 /tools/make-package/cocos2d-x.zip

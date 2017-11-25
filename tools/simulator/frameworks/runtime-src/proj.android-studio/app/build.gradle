@@ -19,8 +19,8 @@ android {
                     // skip the NDK Build step if PROP_NDK_MODE is none
                     targets 'cocos2djs'
                     arguments 'NDK_TOOLCHAIN_VERSION=4.9'
-                    arguments 'APP_PLATFORM=android-'+PROP_TARGET_SDK_VERSION
-                    
+                    arguments 'APP_PLATFORM=android-14'
+
                     def module_paths = [project.file("../../../../../.."),
                                         project.file("../../../../../../cocos"),
                                         project.file("../../../../../../external")]
@@ -41,7 +41,7 @@ android {
     sourceSets.main {
         java.srcDir "src"
         res.srcDir "res"
-        jniLibs.srcDir "libs"
+		jni.srcDirs = []
         manifest.srcFile "AndroidManifest.xml"
     }
 
