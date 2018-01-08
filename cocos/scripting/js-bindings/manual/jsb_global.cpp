@@ -205,8 +205,15 @@ namespace {
         int argc = (int)args.size();
         assert(argc >= 1);
         assert(args[0].isString());
-
-        return jsb_run_script(args[0].toString());
+        
+        std::string filePath = args[0].toString();
+        if(filePath.substr(filePath.size() - 3).compare(".js") == 0 || filePath.substr(filePath.size() - 4).compare(".jsc") == 0) {
+            return jsb_run_script(args[0].toString());
+        } else {
+            CCLOGWARN("ignore require none js or jsc file -> %s", filePath.c_str());
+            s.rval().setUndefined();
+            return true;
+        }
     }
     SE_BIND_FUNC(require)
 

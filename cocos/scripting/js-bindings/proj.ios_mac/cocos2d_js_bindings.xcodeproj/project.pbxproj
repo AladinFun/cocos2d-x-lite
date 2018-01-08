@@ -285,6 +285,10 @@
 		BAF638DD1B5F5DC900CDB43A /* jsb_cocos2dx_audioengine_auto.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BAF638DA1B5F5DC900CDB43A /* jsb_cocos2dx_audioengine_auto.cpp */; };
 		BAF638DE1B5F5DC900CDB43A /* jsb_cocos2dx_audioengine_auto.hpp in Headers */ = {isa = PBXBuildFile; fileRef = BAF638DB1B5F5DC900CDB43A /* jsb_cocos2dx_audioengine_auto.hpp */; };
 		BAF638DF1B5F5DC900CDB43A /* jsb_cocos2dx_audioengine_auto.hpp in Headers */ = {isa = PBXBuildFile; fileRef = BAF638DB1B5F5DC900CDB43A /* jsb_cocos2dx_audioengine_auto.hpp */; };
+		EA27CE971FFF9BBA0079BF41 /* libmozglue.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 1A210DE31F46C2DF006CCBAE /* libmozglue.a */; };
+		EA27CE981FFF9BBE0079BF41 /* libmozglue.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 1A210DDF1F46C2D3006CCBAE /* libmozglue.a */; };
+		EA27CE991FFF9BC30079BF41 /* libjs_static.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 1A210DE21F46C2DF006CCBAE /* libjs_static.a */; };
+		EA27CE9A1FFF9BC60079BF41 /* libjs_static.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 1A210DDE1F46C2D3006CCBAE /* libjs_static.a */; };
 		FA6F1BB31D815C2C007DD223 /* jsb_cocos2dx_dragonbones_auto.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FA6F1BB11D815C2C007DD223 /* jsb_cocos2dx_dragonbones_auto.cpp */; };
 		FA6F1BB41D815C2C007DD223 /* jsb_cocos2dx_dragonbones_auto.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FA6F1BB11D815C2C007DD223 /* jsb_cocos2dx_dragonbones_auto.cpp */; };
 		FA6F1BB51D815C2C007DD223 /* jsb_cocos2dx_dragonbones_auto.hpp in Headers */ = {isa = PBXBuildFile; fileRef = FA6F1BB21D815C2C007DD223 /* jsb_cocos2dx_dragonbones_auto.hpp */; };
@@ -462,6 +466,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EA27CE991FFF9BC30079BF41 /* libjs_static.a in Frameworks */,
+				EA27CE971FFF9BBA0079BF41 /* libmozglue.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -469,6 +475,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EA27CE9A1FFF9BC60079BF41 /* libjs_static.a in Frameworks */,
+				EA27CE981FFF9BBE0079BF41 /* libmozglue.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
