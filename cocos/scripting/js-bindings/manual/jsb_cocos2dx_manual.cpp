@@ -821,7 +821,7 @@ SE_BIND_FUNC(js_EventListenerCustom_create)
 
 static void onBeforeDispatchTouchEvent(Event* event)
 {
-	se::AutoHandleScope hs;
+    se::AutoHandleScope hs;
     if (event->getType() == Event::Type::TOUCH)
     {
         EventTouch* touchEvent = static_cast<EventTouch*>(event);
@@ -842,7 +842,7 @@ static void onBeforeDispatchTouchEvent(Event* event)
 
 static void onAfterDispatchTouchEvent(Event* event)
 {
-	se::AutoHandleScope hs;
+    se::AutoHandleScope hs;
     if (event->getType() == Event::Type::TOUCH)
     {
         EventTouch* touchEvent = static_cast<EventTouch*>(event);
@@ -862,7 +862,7 @@ static void onAfterDispatchTouchEvent(Event* event)
 
 static void onTextureCreate(TextureCache* cache, Texture2D* texture)
 {
-	se::AutoHandleScope hs;
+    se::AutoHandleScope hs;
     auto iterOwner = se::NativePtrToObjectMap::find(cache);
     if (iterOwner == se::NativePtrToObjectMap::end())
     {
@@ -885,7 +885,7 @@ static void onTextureCreate(TextureCache* cache, Texture2D* texture)
 
 static void onTextureDestroy(TextureCache* cache, Texture2D* texture)
 {
-	se::AutoHandleScope hs;
+    se::AutoHandleScope hs;
     auto iterOwner = se::NativePtrToObjectMap::find(cache);
     if (iterOwner == se::NativePtrToObjectMap::end())
     {
@@ -959,6 +959,29 @@ static void rebindNativeObject(se::Object* seObj, cocos2d::Ref* oldRef, cocos2d:
     seObj->clearPrivateData();
     seObj->setPrivateData(newRef);
 }
+
+static bool js_cocos2dx_TMXLayer_getTiles(se::State& s)
+{
+    const auto& args = s.args();
+    int argc = (int)args.size();
+    cocos2d::TMXLayer* cobj = (cocos2d::TMXLayer *)s.nativeThisObject();
+    SE_PRECONDITION2( cobj, false, "js_cocos2dx_TMXLayer_getTiles : Invalid Native Object");
+
+    if (argc == 0)
+    {
+        uint32_t* tiles = cobj->getTiles();
+        cocos2d::Size size = cobj->getLayerSize();
+        int32_t count = size.width * size.height;
+
+        se::HandleObject obj(se::Object::createTypedArray(se::Object::TypedArrayType::UINT32, tiles, count * sizeof(int32_t)));
+        s.rval().setObject(obj);
+        return true;
+    }
+
+    SE_REPORT_ERROR("js_cocos2dx_TMXLayer_getTiles : wrong number of arguments: %d, was expecting %d", argc, 0);
+    return false;
+}
+SE_BIND_FUNC(js_cocos2dx_TMXLayer_getTiles)
 
 static bool js_cocos2dx_ActionInterval_repeat(se::State& s)
 {
@@ -1946,6 +1969,14 @@ bool register_ui_manual(se::Object* obj)
     return true;
 }
 
+static bool register_tilemap_manual(se::Object* obj)
+{
+    __jsb_cocos2d_TMXLayer_proto->defineFunction("getTiles", _SE(js_cocos2dx_TMXLayer_getTiles));
+
+    se::ScriptEngine::getInstance()->clearException();
+    return true;
+}
+
 bool register_all_cocos2dx_manual(se::Object* obj)
 {
     register_plist_parser(obj);
@@ -1954,6 +1985,7 @@ bool register_all_cocos2dx_manual(se::Object* obj)
     register_actions(obj);
     register_empty_retain_release(obj);
     register_texture2d_manual(obj);
+    register_tilemap_manual(obj);
     return true;
 }
 
