@@ -30,8 +30,8 @@
 #define SCRIPT_ENGINE_CHAKRACORE     4
 
 #if defined(__APPLE__) // macOS and iOS use JavaScriptCore
-   /* #define SCRIPT_ENGINE_TYPE           SCRIPT_ENGINE_JSC*/
-	#define SCRIPT_ENGINE_TYPE			SCRIPT_ENGINE_SM
+	#define SCRIPT_ENGINE_TYPE           SCRIPT_ENGINE_JSC
+	/*#define SCRIPT_ENGINE_TYPE			SCRIPT_ENGINE_SM*/
 #elif defined(ANDROID) || (defined(_WIN32) && defined(_WINDOWS)) // Windows and Android use V8
     #define SCRIPT_ENGINE_TYPE           SCRIPT_ENGINE_V8
 #else
