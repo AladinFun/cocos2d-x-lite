@@ -43,7 +43,7 @@
 #elif CC_TARGET_PLATFORM == CC_PLATFORM_TIZEN
 #include "audio/tizen/AudioEngine-tizen.h"
 #endif
-
+#include "CCDirector.h"
 #define TIME_DELAY_PRECISION 0.0001
 
 #ifdef ERROR
@@ -174,6 +174,8 @@ bool AudioEngine::lazyInit()
             _audioEngineImpl = nullptr;
            return false;
         }
+    } else {
+        _audioEngineImpl->_scheduler = Director::getInstance()->getScheduler();
     }
 
 #if (CC_TARGET_PLATFORM != CC_PLATFORM_ANDROID)

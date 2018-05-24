@@ -6750,6 +6750,7 @@ static bool js_cocos2dx_Director_getInstance(se::State& s)
         native_ptr_to_seval<cocos2d::Director>(result, __jsb_cocos2d_Director_class, &instanceVal);
         instanceVal.toObject()->root();
         s.rval() = instanceVal;
+        result->release();
         return true;
     }
     SE_REPORT_ERROR("wrong number of arguments: %d, was expecting %d", (int)argc, 0);

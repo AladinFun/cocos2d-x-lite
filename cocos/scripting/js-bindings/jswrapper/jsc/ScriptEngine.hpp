@@ -293,7 +293,6 @@ namespace se {
         JSGlobalContextRef _cx;
 
         Object* _globalObj;
-        FileOperationDelegate _fileOperationDelegate;
         ExceptionCallback _exceptionCallback;
 
         uint32_t _vmId;

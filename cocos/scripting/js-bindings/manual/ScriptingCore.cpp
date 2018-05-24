@@ -27,10 +27,9 @@
 #include "cocos2d.h"
 
 using namespace cocos2d;
-
+static ScriptingCore* instance = nullptr;
 ScriptingCore* ScriptingCore::getInstance()
 {
-    static ScriptingCore* instance = nullptr;
     if (instance == nullptr)
         instance = new (std::nothrow) ScriptingCore();
 
@@ -46,6 +45,7 @@ ScriptingCore::ScriptingCore()
 
 ScriptingCore::~ScriptingCore()
 {
+    instance = nullptr;
     se::ScriptEngine::destroyInstance();
 }
 

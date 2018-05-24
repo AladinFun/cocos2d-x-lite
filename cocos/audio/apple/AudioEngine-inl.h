@@ -63,7 +63,7 @@ public:
     void uncacheAll();
     AudioCache* preload(const std::string& filePath, std::function<void(bool)> callback);
     void update(float dt);
-
+    Scheduler* _scheduler;
 private:
     void _play2d(AudioCache *cache, int audioID);
     ALuint findValidSource();
@@ -85,7 +85,7 @@ private:
     bool _lazyInitLoop;
 
     int _currentAudioID;
-    Scheduler* _scheduler;
+    
 };
 }
 NS_CC_END

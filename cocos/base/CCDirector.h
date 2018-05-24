@@ -133,6 +133,7 @@ public:
      * @js _getInstance
      */
     static Director* getInstance();
+    static void destroyInstance();
 
     /**
      * @js ctor

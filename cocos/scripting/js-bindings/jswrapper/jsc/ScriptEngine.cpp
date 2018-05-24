@@ -35,6 +35,8 @@
 extern "C" JS_EXPORT void JSSynchronousGarbageCollectForDebugging(JSContextRef);
 #endif
 
+
+
 namespace se {
 
     AutoHandleScope::AutoHandleScope()
@@ -83,10 +85,12 @@ namespace se {
         void privateDataFinalize(JSObjectRef obj)
         {
             internal::PrivateData* p = (internal::PrivateData*)JSObjectGetPrivate(obj);
-            JSObjectSetPrivate(obj, p->data);
-            if (p->finalizeCb != nullptr)
-                p->finalizeCb(obj);
-            free(p);
+            if(p != nullptr) {
+                JSObjectSetPrivate(obj, p->data);
+                if (p->finalizeCb != nullptr)
+                    p->finalizeCb(obj);
+                free(p);
+            }
         }
 
         Value __consoleVal;
@@ -603,6 +607,8 @@ namespace se {
 
         return ok;
     }
+    
+    static ScriptEngine::FileOperationDelegate _fileOperationDelegate;
 
     void ScriptEngine::setFileOperationDelegate(const FileOperationDelegate& delegate)
     {

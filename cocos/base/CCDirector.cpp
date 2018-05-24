@@ -141,6 +141,13 @@ Director* Director::getInstance()
     return s_SharedDirector;
 }
 
+void Director::destroyInstance()
+{
+    if(s_SharedDirector && s_SharedDirector->getReferenceCount() > 0) {
+        s_SharedDirector->release();
+    }
+}
+
 Director::Director()
 : _isStatusLabelUpdated(true),
 _invalid(true),
@@ -1101,6 +1108,7 @@ void Director::purgeDirector()
     if (_openGLView)
     {
         _openGLView->end();
+        _openGLView->release();
         _openGLView = nullptr;
     }
 
