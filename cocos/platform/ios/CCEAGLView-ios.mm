@@ -244,6 +244,7 @@ Copyright (C) 2008 Apple Inc. All Rights Reserved.
 
 - (void) dealloc
 {
+    NSLog(@"CCEAGLView-ios.mm dealloc");
     [[NSNotificationCenter defaultCenter] removeObserver:self]; // remove keyboard notification
     [renderer_ release];
     self.keyboardShowNotification = nullptr; // implicit release
@@ -796,6 +797,9 @@ Copyright (C) 2008 Apple Inc. All Rights Reserved.
 #endif
 
     auto glview = director->getOpenGLView();
+    if (glview == NULL) {
+        return;
+    }
     float scaleX = glview->getScaleX();
     float scaleY = glview->getScaleY();
 
