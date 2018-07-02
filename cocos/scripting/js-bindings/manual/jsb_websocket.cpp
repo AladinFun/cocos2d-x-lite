@@ -426,11 +426,11 @@ SE_BIND_FUNC(WebSocket_send)
 
 static bool WebSocket_close(se::State& s)
 {
-    const auto& args = s.args();
-    int argc = (int)args.size();
+//    const auto& args = s.args();
+//    int argc = (int)args.size();
 
-    if (argc == 0)
-    {
+//    if (argc == 0)
+//    {
         WebSocket* cobj = (WebSocket*)s.nativeThisObject();
         cobj->closeAsync();
         // Attach current WebSocket instance to global object to prevent WebSocket instance
@@ -443,9 +443,9 @@ static bool WebSocket_close(se::State& s)
         // Please note that we need to detach it from global object in "JSB_WebSocketDelegate::onClose".
         se::ScriptEngine::getInstance()->getGlobalObject()->attachObject(s.thisObject());
         return true;
-    }
-    SE_REPORT_ERROR("wrong number of arguments: %d, was expecting 0", argc);
-    return false;
+//    }
+//    SE_REPORT_ERROR("wrong number of arguments: %d, was expecting 0", argc);
+//    return false;
 }
 SE_BIND_FUNC(WebSocket_close)
 
