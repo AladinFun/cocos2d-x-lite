@@ -350,7 +350,7 @@ public abstract class Cocos2dxActivity extends AppCompatActivity implements Coco
 
         Log.d(TAG, "Cocos2dxActivity onDestroy: " + this + ", mGLSurfaceView" + mGLSurfaceView);
         if (mGLSurfaceView != null) {
-            Cocos2dxHelper.terminateProcess();
+//            Cocos2dxHelper.terminateProcess();
         }
     }
 
