@@ -31,6 +31,8 @@ THE SOFTWARE.
 #include "base/ccMacros.h"
 #include "platform/android/jni/JniHelper.h"
 #include "CCGL.h"
+#include "cocos2d.h"
+#include "network/HttpClient.h"
 
 #include <stdlib.h>
 #include <android/log.h>
@@ -110,7 +112,7 @@ bool GLViewImpl::isOpenGLReady()
 
 void GLViewImpl::end()
 {
-    JniHelper::callStaticVoidMethod("org/cocos2dx/lib/Cocos2dxHelper", "terminateProcess");
+//     JniHelper::callStaticVoidMethod("org/cocos2dx/lib/Cocos2dxHelper", "terminateProcess");
 }
 
 void GLViewImpl::swapBuffers()

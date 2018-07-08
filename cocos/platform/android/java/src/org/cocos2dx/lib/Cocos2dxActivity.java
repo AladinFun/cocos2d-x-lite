@@ -299,6 +299,8 @@ public abstract class Cocos2dxActivity extends AppCompatActivity implements Coco
 
     //native method,call GLViewImpl::getGLContextAttrs() to get the OpenGL ES context attributions
     private static native int[] getGLContextAttrs();
+    public static native void cleanup();
+    public static native void endGame();
     
     // ===========================================================
     // Getter & Setter
@@ -346,12 +348,11 @@ public abstract class Cocos2dxActivity extends AppCompatActivity implements Coco
     @Override
     protected void onDestroy() {
         Cocos2dxAudioFocusManager.unregisterAudioFocusListener(this);
-        super.onDestroy();
-
         Log.d(TAG, "Cocos2dxActivity onDestroy: " + this + ", mGLSurfaceView" + mGLSurfaceView);
         if (mGLSurfaceView != null) {
 //            Cocos2dxHelper.terminateProcess();
         }
+        super.onDestroy();
     }
 
     @Override

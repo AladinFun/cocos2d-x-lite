@@ -68,7 +68,6 @@ void Application::setAnimationInterval(float interval)
 
 Application* Application::getInstance()
 {
-    CC_ASSERT(sm_pSharedApplication);
     return sm_pSharedApplication;
 }
 

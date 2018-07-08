@@ -37,6 +37,9 @@ NS_CC_BEGIN
 class CC_DLL Application : public ApplicationProtocol
 {
 public:
+
+    static bool firstTime;
+
     /**
      * @js ctor
      */

@@ -296,10 +296,10 @@ namespace se {
         v8::Persistent<v8::Context> _context;
         v8::Isolate::CreateParams _createParams;
 
-        v8::Platform* _platform;
+//      v8::Platform* _platform;
         v8::Isolate* _isolate;
         v8::HandleScope* _handleScope;
-        v8::ArrayBuffer::Allocator* _allocator;
+//        v8::ArrayBuffer::Allocator* _allocator;
         Object* _globalObj;
 
         FileOperationDelegate _fileOperationDelegate;

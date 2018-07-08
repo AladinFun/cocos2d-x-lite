@@ -50,6 +50,8 @@ NS_CC_BEGIN
 
 // sharedApplication pointer
 Application * Application::sm_pSharedApplication = nullptr;
+    bool Application::firstTime = true;
+
 
 Application::Application()
 {

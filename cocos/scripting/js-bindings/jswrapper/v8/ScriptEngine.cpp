@@ -205,6 +205,9 @@ namespace se {
 
     } // namespace {
 
+    static v8::Platform* platform = nullptr;
+    static v8::ArrayBuffer::Allocator* allocator = nullptr;
+
     void ScriptEngine::onFatalErrorCallback(const char* location, const char* message)
     {
         std::string errorStr = "[FATAL ERROR] location: ";
@@ -325,10 +328,10 @@ namespace se {
     }
 
     ScriptEngine::ScriptEngine()
-    : _platform(nullptr)
-    , _isolate(nullptr)
+//    : _platform(nullptr)
+    : _isolate(nullptr)
     , _handleScope(nullptr)
-    , _allocator(nullptr)
+//    , _allocator(nullptr)
     , _globalObj(nullptr)
     , _exceptionCallback(nullptr)
 #if SE_ENABLE_INSPECTOR
@@ -344,19 +347,22 @@ namespace se {
     {
         //        RETRUN_VAL_IF_FAIL(v8::V8::InitializeICUDefaultLocation(nullptr, "/Users/james/Project/v8/out.gn/x64.debug/icudtl.dat"), false);
         //        v8::V8::InitializeExternalStartupData("/Users/james/Project/v8/out.gn/x64.debug/natives_blob.bin", "/Users/james/Project/v8/out.gn/x64.debug/snapshot_blob.bin"); //TODO
-        _platform = v8::platform::CreateDefaultPlatform();
-        v8::V8::InitializePlatform(_platform);
-        bool ok = v8::V8::Initialize();
-        assert(ok);
+
+        if(!platform) {
+            platform = v8::platform::CreateDefaultPlatform();
+            v8::V8::InitializePlatform(platform);
+            bool ok = v8::V8::Initialize();
+            assert(ok);
+        }
     }
 
     ScriptEngine::~ScriptEngine()
     {
         cleanup();
-        v8::V8::Dispose();
-        v8::V8::ShutdownPlatform();
-        delete _platform;
-        _platform = nullptr;
+//        v8::V8::Dispose();
+//        v8::V8::ShutdownPlatform();
+//        delete _platform;
+//        _platform = nullptr;
     }
 
     bool ScriptEngine::init()
@@ -371,10 +377,12 @@ namespace se {
         }
         _beforeInitHookArray.clear();
 
-        assert(_allocator == nullptr);
-        _allocator = v8::ArrayBuffer::Allocator::NewDefaultAllocator();
+
+        if(!allocator) {
+            allocator = v8::ArrayBuffer::Allocator::NewDefaultAllocator();
+        }
         // Create a new Isolate and make it the current one.
-        _createParams.array_buffer_allocator = _allocator;
+        _createParams.array_buffer_allocator = allocator;
         _isolate = v8::Isolate::New(_createParams);
         v8::HandleScope hs(_isolate);
         _isolate->Enter();
@@ -490,8 +498,8 @@ namespace se {
         }
         _isolate->Dispose();
 
-        delete _allocator;
-        _allocator = nullptr;
+//        delete _allocator;
+//        _allocator = nullptr;
         _isolate = nullptr;
         _globalObj = nullptr;
         _isValid = false;
@@ -562,7 +570,7 @@ namespace se {
             options.set_inspector_enabled(true);
             options.set_port((int)_debuggerServerPort);
             options.set_host_name(_debuggerServerAddr.c_str());
-            bool ok = _env->inspector_agent()->Start(_platform, "", options);
+            bool ok = _env->inspector_agent()->Start(platform, "", options);
             assert(ok);
 #endif
         }
@@ -589,7 +597,7 @@ namespace se {
         SE_LOGD("GC begin ..., (js->native map) size: %d, all objects: %d\n", (int)NativePtrToObjectMap::size(), (int)__objectMap.size());
         const double kLongIdlePauseInSeconds = 1.0;
         _isolate->ContextDisposedNotification();
-        _isolate->IdleNotificationDeadline(_platform->MonotonicallyIncreasingTime() + kLongIdlePauseInSeconds);
+        _isolate->IdleNotificationDeadline(platform->MonotonicallyIncreasingTime() + kLongIdlePauseInSeconds);
         // By sending a low memory notifications, we will try hard to collect all
         // garbage and will therefore also invoke all weak callbacks of actually
         // unreachable persistent handles.

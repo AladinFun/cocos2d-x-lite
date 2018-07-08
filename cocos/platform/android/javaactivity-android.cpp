@@ -37,9 +37,11 @@ THE SOFTWARE.
 #include "2d/CCDrawingPrimitives.h"
 #include "platform/android/jni/JniHelper.h"
 #include "network/CCDownloader-android.h"
+#include "network/HttpClient.h"
 #include <android/log.h>
 #include <android/api-level.h>
 #include <jni.h>
+#include <CCThread.h>
 
 #define  LOG_TAG    "main"
 #define  LOGD(...)  __android_log_print(ANDROID_LOG_DEBUG,LOG_TAG,__VA_ARGS__)
@@ -85,6 +87,10 @@ JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *reserved)
 
 JNIEXPORT void Java_org_cocos2dx_lib_Cocos2dxRenderer_nativeInit(JNIEnv*  env, jobject thiz, jint w, jint h)
 {
+    if(!cocos2d::Application::getInstance()) {
+        cocos_android_app_init(env);
+    }
+
     auto director = cocos2d::Director::getInstance();
     auto glview = director->getOpenGLView();
     if (!glview)
@@ -113,6 +119,9 @@ JNIEXPORT void Java_org_cocos2dx_lib_Cocos2dxRenderer_nativeInit(JNIEnv*  env, j
 
 JNIEXPORT jintArray Java_org_cocos2dx_lib_Cocos2dxActivity_getGLContextAttrs(JNIEnv*  env, jobject thiz)
 {
+    if(!cocos2d::Application::getInstance()) {
+        cocos_android_app_init(env);
+    }
     cocos2d::Application::getInstance()->initGLContextAttrs();
     GLContextAttrs _glContextAttrs = GLView::getGLContextAttrs();
 
@@ -125,6 +134,21 @@ JNIEXPORT jintArray Java_org_cocos2dx_lib_Cocos2dxActivity_getGLContextAttrs(JNI
 
     return glContextAttrsJava;
 }
+
+JNIEXPORT jintArray Java_org_cocos2dx_lib_Cocos2dxActivity_endGame(JNIEnv*  env, jobject thiz)
+{
+    cocos2d::Application::firstTime = true;
+    cocos2d::Director::getInstance()->end();
+    cocos2d::Director::getInstance()->mainLoop();
+}
+
+JNIEXPORT jintArray Java_org_cocos2dx_lib_Cocos2dxActivity_cleanup(JNIEnv*  env, jobject thiz)
+{
+    cocos2d::Application::destroyInstance();
+    cocos2d::network::HttpClient::destroyInstance();
+    cocos2d::Director::destroyInstance();
+}
+
 
 JNIEXPORT void Java_org_cocos2dx_lib_Cocos2dxAudioFocusManager_nativeOnAudioFocusChange(JNIEnv* env, jobject thiz, jint focusChange)
 {

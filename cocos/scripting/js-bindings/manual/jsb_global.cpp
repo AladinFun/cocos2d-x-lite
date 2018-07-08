@@ -137,9 +137,8 @@ void jsb_init_file_operation_delegate()
         };
 
         assert(delegate.isValid());
-
-        se::ScriptEngine::getInstance()->setFileOperationDelegate(delegate);
     }
+    se::ScriptEngine::getInstance()->setFileOperationDelegate(delegate);
 }
 
 bool jsb_enable_debugger(const std::string& debuggerServerAddr, uint32_t port)

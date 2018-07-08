@@ -234,6 +234,7 @@ namespace se {
         _beforeInitHookArray.clear();
 
         _cx = JSGlobalContextCreate(nullptr);
+        JSGlobalContextRetain(_cx);
 
         if (nullptr == _cx)
             return false;
@@ -335,6 +336,7 @@ namespace se {
         __oldConsoleError.setUndefined();
         __oldConsoleAssert.setUndefined();
 
+        JSGlobalContextRelease(_cx);
         JSGlobalContextRelease(_cx);
 
         _cx = nullptr;
