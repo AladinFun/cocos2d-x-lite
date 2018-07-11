@@ -38,6 +38,8 @@
 -(void) stopMainLoop;
 -(void) doCaller: (id) sender;
 -(void) setAnimationInterval:(double)interval;
+-(void)appDidBecomeActive;
+-(void)appDidBecomeInactive;
 +(id) sharedDirectorCaller;
 +(void) destroy;
 @end

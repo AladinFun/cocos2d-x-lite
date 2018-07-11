@@ -85,7 +85,10 @@ static id s_sharedDirectorCaller;
 -(void) dealloc
 {
     [[NSNotificationCenter defaultCenter] removeObserver:self];
-    [displayLink release];
+    if(displayLink) {
+        [displayLink release];
+        displayLink = nil;
+    }
     [super dealloc];
 }
 
@@ -111,8 +114,10 @@ static id s_sharedDirectorCaller;
 
 -(void) stopMainLoop
 {
-    [displayLink invalidate];
-    displayLink = nil;
+    if(displayLink) {
+        [displayLink invalidate];
+        displayLink = nil;
+    }
 }
 
 -(void) setAnimationInterval:(double)intervalNew
