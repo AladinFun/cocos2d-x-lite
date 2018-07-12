@@ -7,6 +7,8 @@
 #include "cocos/editor-support/dragonbones/cocos2dx/CCDragonBonesHeaders.h"
 
 #include "cocos2d.h"
+#include <algorithm>
+#include <vector>
 
 using namespace cocos2d;
 
@@ -483,9 +485,10 @@ bool register_all_dragonbones_manual(se::Object* obj)
         // Clear dragonBones::Armature objects those are not in the pool because
         // dragonBones::Armature controls life cycle for lots of other objects,
         // so it needs to be disposed first.
+        std::vector<dragonBones::BaseObject*>& allObject = dragonBones::BaseObject::getAllObjects();
         for (auto dbObj : allDragonBonesObjects)
         {
-            if (dynamic_cast<dragonBones::Armature*>(dbObj) != nullptr && !dbObj->isInPool())
+            if (dynamic_cast<dragonBones::Armature*>(dbObj) != nullptr && !dbObj->isInPool() && std::find(allObject.begin(), allObject.end(), dbObj) != allObject.end())
             {
 //                SE_LOGD("1. Force delete not in pool DragonBones Armature object: %s, %p\n", typeid(*dbObj).name(), dbObj);
                 delete dbObj;
@@ -502,7 +505,7 @@ bool register_all_dragonbones_manual(se::Object* obj)
         // Check again whether there are some objects still in pool since the releationship of dragonbones objects is really complex.
         for (auto dbObj : allDragonBonesObjects)
         {
-            if (!dbObj->isInPool())
+            if (!dbObj->isInPool() && std::find(allObject.begin(), allObject.end(), dbObj) != allObject.end())
             {
 //                SE_LOGD("2. Force delete not in pool DragonBones object: %s, %p\n", typeid(*dbObj).name(), dbObj);
                 delete dbObj;
