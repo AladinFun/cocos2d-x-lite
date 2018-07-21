@@ -134,6 +134,9 @@ static id s_sharedDirectorCaller;
 
 -(void) doCaller: (id) sender
 {
+    if(!isAppActive) {
+        return;
+    }
     cocos2d::Director* director = cocos2d::Director::getInstance();
     if (isAppActive && director) {
         //引擎是在下一帧才做结束的清理，而runtime版本在下一帧时EAGLView已经从superview移除

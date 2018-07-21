@@ -34,7 +34,7 @@ namespace se {
     public:
         // key: native ptr, value: se::Object
         using Map = std::unordered_map<void*, Object*>;
-
+        static bool isValid();
         static bool init();
         static void destroy();
 

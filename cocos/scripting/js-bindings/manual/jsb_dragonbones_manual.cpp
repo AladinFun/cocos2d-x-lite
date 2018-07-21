@@ -478,7 +478,9 @@ bool register_all_dragonbones_manual(se::Object* obj)
         dragonBones::WorldClock::clock.clear();
         dragonBones::WorldClock::clock.time = 0.0f;
         dragonBones::WorldClock::clock.timeScale = 1.0f;
-
+        
+        dragonBones::BaseObject::destroyAllObjects();
+/*
         // Copy the dragonbones object vector since vector element will be deleted in BaseObject destructor.
         std::vector<dragonBones::BaseObject*> allDragonBonesObjects = dragonBones::BaseObject::getAllObjects();
         SE_LOGD("Starting to cleanup dragonbones object, count: %d\n", (int)allDragonBonesObjects.size());
@@ -527,6 +529,8 @@ bool register_all_dragonbones_manual(se::Object* obj)
 
         // If there're leak objects, clear vector should be done for restarting game.
         refAllDragonBonesObjects.clear();
+*/
+        CCLOG("after destory all dragonbone objects!!!");
     });
 
     se::ScriptEngine::getInstance()->clearException();

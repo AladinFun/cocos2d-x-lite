@@ -844,6 +844,10 @@ void EventDispatcher::dispatchEvent(Event* event)
         };
 
         dispatchEventToListeners(listeners, onEvent);
+        
+        if(!_isEnabled) {
+            return;
+        }
 
         updateListeners(event);
     }

@@ -10,8 +10,30 @@ std::unordered_map<std::size_t, std::size_t> BaseObject::_maxCountMap;
 std::unordered_map<std::size_t, std::vector<BaseObject*>> BaseObject::_poolsMap;
 BaseObject::RecycleOrDestroyCallback BaseObject::_recycleOrDestroyCallback = nullptr;
 
+
+bool isInCleanUp = false;
+
+void BaseObject::destroyAllObjects()
+{
+    isInCleanUp = true;
+    std::vector<BaseObject*> allObj = BaseObject::__allDragonBonesObjects;
+    for (auto dbObj : allObj)
+    {
+        delete dbObj;
+    }
+    isInCleanUp = false;
+    
+    BaseObject::__allDragonBonesObjects.clear();
+    BaseObject::_maxCountMap.clear();
+    BaseObject::_poolsMap.clear();
+}
+
 void BaseObject::_returnObject(BaseObject* object)
 {
+    if(isInCleanUp) {
+        return;
+    }
+    
     const auto classTypeIndex = object->getClassTypeIndex();
     const auto maxCountIterator = _maxCountMap.find(classTypeIndex);
     const auto maxCount = maxCountIterator != _maxCountMap.end() ? maxCountIterator->second : _defaultMaxCount;
@@ -91,6 +113,10 @@ void BaseObject::setMaxCount(std::size_t classTypeIndex, std::size_t maxCount)
 
 void BaseObject::clearPool(std::size_t classTypeIndex)
 {
+    if(isInCleanUp) {
+        return;
+    }
+    
     if (classTypeIndex)
     {
         const auto iterator = _poolsMap.find(classTypeIndex);
@@ -138,6 +164,10 @@ BaseObject::~BaseObject()
 {
     if (_recycleOrDestroyCallback != nullptr)
         _recycleOrDestroyCallback(this, 1);
+    
+    if(isInCleanUp) {
+        return;
+    }
 
     auto iter = std::find(__allDragonBonesObjects.begin(), __allDragonBonesObjects.end(), this);
     if (iter != __allDragonBonesObjects.end())

@@ -223,7 +223,6 @@ bool Director::init(void)
 Director::~Director(void)
 {
     CCLOGINFO("deallocing Director: %p", this);
-
     CC_SAFE_RELEASE(_FPSLabel);
     CC_SAFE_RELEASE(_drawnVerticesLabel);
     CC_SAFE_RELEASE(_drawnBatchesLabel);
@@ -352,6 +351,10 @@ void Director::drawScene()
     _renderer->render();
 
     _eventDispatcher->dispatchEvent(_eventAfterDraw);
+    
+    if(!s_SharedDirector) {
+        return;
+    }
 
     popMatrix(MATRIX_STACK_TYPE::MATRIX_STACK_MODELVIEW);
 
@@ -410,8 +413,9 @@ void Director::setOpenGLView(GLView *openGLView)
         conf->gatherGPUInfo();
         CCLOG("%s\n",conf->getInfo().c_str());
 
-        if(_openGLView)
+        if(_openGLView) {
             _openGLView->release();
+        }
         _openGLView = openGLView;
         _openGLView->retain();
 
@@ -1101,7 +1105,7 @@ void Director::reset()
 void Director::purgeDirector()
 {
     reset();
-
+    
     CHECK_GL_ERROR_DEBUG();
 
     // OpenGL view

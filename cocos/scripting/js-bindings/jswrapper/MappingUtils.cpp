@@ -69,6 +69,11 @@ void NativePtrToObjectMap::clear()
 {
     __nativePtrToObjectMap->clear();
 }
+    
+bool NativePtrToObjectMap::isValid()
+{
+    return __nativePtrToObjectMap != NULL;
+}
 
 size_t NativePtrToObjectMap::size()
 {

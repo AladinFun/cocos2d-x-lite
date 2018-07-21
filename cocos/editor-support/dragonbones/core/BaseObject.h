@@ -20,6 +20,7 @@ DRAGONBONES_NAMESPACE_BEGIN
 class BaseObject
 {
 public:
+    static void destroyAllObjects();
     typedef std::function<void(BaseObject*,int)> RecycleOrDestroyCallback;
 private:
     static std::size_t _hashCode;

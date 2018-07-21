@@ -155,7 +155,7 @@ public:
         se::ScriptEngine::getInstance()->clearException();
         se::AutoHandleScope hs;
 
-        if (cocos2d::Director::getInstance() == nullptr || cocos2d::ScriptEngineManager::getInstance() == nullptr)
+        if (!se::NativePtrToObjectMap::isValid() || cocos2d::Director::getInstance() == nullptr || cocos2d::ScriptEngineManager::getInstance() == nullptr)
             return;
 
         auto iter = se::NativePtrToObjectMap::find(ws);
