@@ -85,7 +85,6 @@ void Application::setAnimationInterval(float interval) {
 //////////////////////////////////////////////////////////////////////////
 Application* Application::getInstance()
 {
-    CCAssert(sm_pSharedApplication, "");
     return sm_pSharedApplication;
 }
 

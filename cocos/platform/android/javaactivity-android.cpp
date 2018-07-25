@@ -95,7 +95,7 @@ JNIEXPORT void Java_org_cocos2dx_lib_Cocos2dxRenderer_nativeInit(JNIEnv*  env, j
     auto glview = director->getOpenGLView();
     if (!glview)
     {
-        glview = cocos2d::GLViewImpl::create("Android app");
+        glview = cocos2d::GLViewImpl::create("CocosRuntime");
         glview->setFrameSize(w, h);
         director->setOpenGLView(glview);
 
@@ -138,14 +138,15 @@ JNIEXPORT jintArray Java_org_cocos2dx_lib_Cocos2dxActivity_getGLContextAttrs(JNI
 JNIEXPORT jintArray Java_org_cocos2dx_lib_Cocos2dxActivity_endGame(JNIEnv*  env, jobject thiz)
 {
     cocos2d::Application::firstTime = true;
-    cocos2d::Director::getInstance()->end();
-    cocos2d::Director::getInstance()->mainLoop();
 }
 
 JNIEXPORT jintArray Java_org_cocos2dx_lib_Cocos2dxActivity_cleanup(JNIEnv*  env, jobject thiz)
 {
+    cocos2d::Director::getInstance()->end();
+    cocos2d::Director::getInstance()->mainLoop();
+    cocos2d::Director::getInstance()->getEventDispatcher()->setEnabled(false);
+
     cocos2d::Application::destroyInstance();
-    cocos2d::network::HttpClient::destroyInstance();
     cocos2d::Director::destroyInstance();
 }
 
