@@ -59,6 +59,7 @@ static id s_sharedDirectorCaller;
 
 +(void) destroy
 {
+    NSLog(@"[CCDirectorCaller] %@", @"destroy");
     [s_sharedDirectorCaller stopMainLoop];
     [s_sharedDirectorCaller release];
     s_sharedDirectorCaller = nil;
@@ -71,6 +72,7 @@ static id s_sharedDirectorCaller;
 
 - (instancetype)init
 {
+    NSLog(@"[CCDirectorCaller] %@", @"init");
     self = [super init];
     if (self)
     {
@@ -84,6 +86,7 @@ static id s_sharedDirectorCaller;
 
 -(void) dealloc
 {
+    NSLog(@"[CCDirectorCaller] %@", @"dealloc");
     [[NSNotificationCenter defaultCenter] removeObserver:self];
     if(displayLink) {
         [displayLink release];
@@ -94,16 +97,19 @@ static id s_sharedDirectorCaller;
 
 - (void)appDidBecomeActive
 {
+    NSLog(@"[CCDirectorCaller] %@", @"appDidBecomeActive");
     isAppActive = YES;
 }
 
 - (void)appDidBecomeInactive
 {
+    NSLog(@"[CCDirectorCaller] %@", @"appDidBecomeInactive");
     isAppActive = NO;
 }
 
 -(void) startMainLoop
 {
+    NSLog(@"[CCDirectorCaller] %@", @"startMainLoop");
     // Director::setAnimationInterval() is called, we should invalidate it first
     [self stopMainLoop];
 
@@ -114,6 +120,7 @@ static id s_sharedDirectorCaller;
 
 -(void) stopMainLoop
 {
+    NSLog(@"[CCDirectorCaller] %@", @"stopMainLoop");
     if(displayLink) {
         [displayLink invalidate];
         displayLink = nil;
@@ -138,7 +145,7 @@ static id s_sharedDirectorCaller;
         return;
     }
     cocos2d::Director* director = cocos2d::Director::getInstance();
-    if (isAppActive && director) {
+    if (isAppActive && director && director->isValid()) {
         //引擎是在下一帧才做结束的清理，而runtime版本在下一帧时EAGLView已经从superview移除
         if (!director->isPurgeDirectorInNextLoop() && director->getOpenGLView()) {
             [EAGLContext setCurrentContext: [(CCEAGLView*)director->getOpenGLView()->getEAGLView() context]];

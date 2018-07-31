@@ -42,6 +42,8 @@
 
 #endif
 
+#include "cocos2d.h"
+
 namespace cocos2d { namespace network {
 
     DownloadTask::DownloadTask()
@@ -77,7 +79,7 @@ namespace cocos2d { namespace network {
                                        int64_t totalBytesExpected,
                                        std::function<int64_t(void *buffer, int64_t len)>& /*transferDataToBuffer*/)
         {
-            if (onTaskProgress)
+            if (Application::isRunning && onTaskProgress)
             {
                 onTaskProgress(task, bytesReceived, totalBytesReceived, totalBytesExpected);
             }

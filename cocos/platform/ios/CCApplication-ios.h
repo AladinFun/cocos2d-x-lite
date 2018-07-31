@@ -61,6 +61,8 @@ public:
     static Application* getInstance();
 
     static void destroyInstance();
+    
+    static bool isRunning;
 
     /**
      @brief    Callback by Director for limit FPS.

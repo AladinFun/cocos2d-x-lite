@@ -87,6 +87,10 @@ static bool js_cocos2dx_extension_loadRemoteImage(se::State& s)
         {
             auto downloader = new (std::nothrow) cocos2d::network::Downloader();
             downloader->onDataTaskSuccess = [downloader, url, onSuccess, onError](const cocos2d::network::DownloadTask& task, std::vector<unsigned char>& data){
+                if(!Application::isRunning) {
+                    delete downloader;
+                    return;
+                }
                 Image* img = new (std::nothrow) Image();
                 Texture2D* tex = nullptr;
                 do
@@ -116,6 +120,10 @@ static bool js_cocos2dx_extension_loadRemoteImage(se::State& s)
 
             downloader->onTaskError = [downloader, onError](const cocos2d::network::DownloadTask& task, int errorCode, int errorCodeInternal, const std::string& errorStr)
             {
+                if(!Application::isRunning) {
+                    delete downloader;
+                    return;
+                }
                 onError();
 
                 // Downloader may use its member variables after this callback,
@@ -175,6 +183,10 @@ static bool js_cocos2dx_extension_initRemoteImage(se::State& s)
     auto downloader = new (std::nothrow) cocos2d::network::Downloader();
     downloader->onDataTaskSuccess = [=](const cocos2d::network::DownloadTask& task, std::vector<unsigned char>& data)
     {
+        if(!Application::isRunning) {
+            delete downloader;
+            return;
+        }
         bool success = false;
 
         Image* image = new (std::nothrow) Image();
@@ -199,6 +211,10 @@ static bool js_cocos2dx_extension_initRemoteImage(se::State& s)
 
     downloader->onTaskError = [=](const cocos2d::network::DownloadTask& task, int errorCode, int errorCodeInternal, const std::string& errorStr)
     {
+        if(!Application::isRunning) {
+            delete downloader;
+            return;
+        }
         onCallback(false);
         Director::getInstance()->getScheduler()->performFunctionInCocosThread([downloader](){
             delete downloader;

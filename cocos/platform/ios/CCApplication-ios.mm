@@ -35,6 +35,7 @@
 NS_CC_BEGIN
 
 Application* Application::sm_pSharedApplication = nullptr;
+bool Application::isRunning = false;
 
 Application::Application()
 {
