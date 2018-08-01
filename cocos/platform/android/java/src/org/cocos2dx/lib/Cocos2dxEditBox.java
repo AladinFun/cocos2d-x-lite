@@ -27,6 +27,7 @@ package org.cocos2dx.lib;
 import android.content.Context;
 import android.graphics.Color;
 import android.graphics.Typeface;
+import android.support.v7.widget.AppCompatEditText;
 import android.text.InputFilter;
 import android.text.InputType;
 import android.text.method.PasswordTransformationMethod;
@@ -41,7 +42,7 @@ import android.widget.FrameLayout;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class Cocos2dxEditBox extends EditText {
+public class Cocos2dxEditBox extends AppCompatEditText {
     /**
      * The user is allowed to enter any text, including line breaks.
      */
@@ -279,9 +280,7 @@ public class Cocos2dxEditBox extends EditText {
     public boolean onKeyDown(final int pKeyCode, final KeyEvent pKeyEvent) {
         switch (pKeyCode) {
             case KeyEvent.KEYCODE_BACK:
-                Cocos2dxActivity activity = (Cocos2dxActivity)this.getContext();
-                //To prevent program from going to background
-                activity.getGLSurfaceView().requestFocus();
+                Cocos2dxContext.getGLSurfaceView().requestFocus();
                 return true;
             default:
                 return super.onKeyDown(pKeyCode, pKeyEvent);

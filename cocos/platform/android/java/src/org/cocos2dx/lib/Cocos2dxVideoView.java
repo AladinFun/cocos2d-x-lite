@@ -17,6 +17,7 @@
 
 package org.cocos2dx.lib;
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -76,7 +77,7 @@ public class Cocos2dxVideoView extends SurfaceView implements MediaPlayerControl
     // recording the seek position while preparing
     private int         mSeekWhenPrepared = 0;
 
-    protected Cocos2dxActivity mCocos2dxActivity = null;
+    protected Activity mCocos2dxActivity = null;
 
     protected int mViewLeft = 0;
     protected int mViewTop = 0;
@@ -94,7 +95,7 @@ public class Cocos2dxVideoView extends SurfaceView implements MediaPlayerControl
 
     private int mViewTag = 0;
 
-    public Cocos2dxVideoView(Cocos2dxActivity activity,int tag) {
+    public Cocos2dxVideoView(Activity activity, int tag) {
         super(activity);
 
         mViewTag = tag;

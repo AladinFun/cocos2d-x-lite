@@ -24,6 +24,7 @@ THE SOFTWARE.
  ****************************************************************************/
 package org.cocos2dx.lib;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Color;
@@ -46,7 +47,7 @@ import android.widget.TextView;
 
 public class Cocos2dxEditBoxHelper {
     private static final String TAG = Cocos2dxEditBoxHelper.class.getSimpleName();
-    private static Cocos2dxActivity mCocos2dxActivity;
+    private static Activity mCocos2dxActivity;
     private static ResizeLayout mFrameLayout;
 
     private static SparseArray<Cocos2dxEditBox> mEditBoxArray;
@@ -77,7 +78,7 @@ public class Cocos2dxEditBoxHelper {
     public Cocos2dxEditBoxHelper(ResizeLayout layout) {
         Cocos2dxEditBoxHelper.mFrameLayout = layout;
 
-        Cocos2dxEditBoxHelper.mCocos2dxActivity = (Cocos2dxActivity) Cocos2dxActivity.getContext();
+        Cocos2dxEditBoxHelper.mCocos2dxActivity = Cocos2dxContext.getActivity();
         Cocos2dxEditBoxHelper.mEditBoxArray = new SparseArray<Cocos2dxEditBox>();
     }
 
@@ -141,7 +142,7 @@ public class Cocos2dxEditBoxHelper {
                             editBox.addTextChangedListener(this);
 
                             if((Boolean)editBox.getTag()) {
-                                mCocos2dxActivity.runOnGLThread(new Runnable() {
+                                Cocos2dxHelper.runOnGLThread(new Runnable() {
                                     @Override
                                     public void run() {
                                         Cocos2dxEditBoxHelper.__editBoxEditingChanged(index, s.toString());
@@ -162,7 +163,7 @@ public class Cocos2dxEditBoxHelper {
                         editBox.setTag(true);
                         editBox.setChangedTextProgrammatically(false);
                         if (hasFocus) {
-                            mCocos2dxActivity.runOnGLThread(new Runnable() {
+                            Cocos2dxHelper.runOnGLThread(new Runnable() {
                                 @Override
                                 public void run() {
                                     Cocos2dxEditBoxHelper.__editBoxEditingDidBegin(index);
@@ -170,20 +171,20 @@ public class Cocos2dxEditBoxHelper {
                             });
                             editBox.setSelection(editBox.getText().length());
                             mFrameLayout.setEnableForceDoLayout(true);
-                            mCocos2dxActivity.getGLSurfaceView().setSoftKeyboardShown(true);
+                            Cocos2dxContext.getGLSurfaceView().setSoftKeyboardShown(true);
                             Log.d(TAG, "edit box get focus");
                         } else {
                             editBox.setVisibility(View.GONE);
                             // Note that we must to copy a string to prevent string content is modified
                             // on UI thread while 's.toString' is invoked at the same time.
                             final String text = new String(editBox.getText().toString());
-                            mCocos2dxActivity.runOnGLThread(new Runnable() {
+                            Cocos2dxHelper.runOnGLThread(new Runnable() {
                                 @Override
                                 public void run() {
                                     Cocos2dxEditBoxHelper.__editBoxEditingDidEnd(index, text);
                                 }
                             });
-                            mCocos2dxActivity.hideVirtualButton();
+                            Cocos2dxContext.hideVirtualButton();
                             mFrameLayout.setEnableForceDoLayout(false);
                             Log.d(TAG, "edit box lose focus");
                         }
@@ -226,7 +227,7 @@ public class Cocos2dxEditBoxHelper {
     }
 
     private static  void runEditBoxEditingReturnInGLThread(final int index) {
-        mCocos2dxActivity.runOnGLThread(new Runnable() {
+        Cocos2dxContext.runOnGLThread(new Runnable() {
             @Override
             public void run() {
                 Cocos2dxEditBoxHelper.__editBoxEditingReturn(index);
@@ -235,7 +236,7 @@ public class Cocos2dxEditBoxHelper {
     }
 
     public static void removeEditBox(final int index) {
-        mCocos2dxActivity.runOnUiThread(new Runnable() {
+        Cocos2dxContext.runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 Cocos2dxEditBox editBox = mEditBoxArray.get(index);
@@ -257,7 +258,7 @@ public class Cocos2dxEditBoxHelper {
                     if (!fontName.isEmpty()) {
                         if (fontName.endsWith(".ttf")) {
                             try {
-                                tf = Cocos2dxTypefaces.get(mCocos2dxActivity.getContext(), fontName);
+                                tf = Cocos2dxTypefaces.get(Cocos2dxContext.getActivity(), fontName);
                             } catch (final Exception e) {
                                 Log.e("Cocos2dxEditBoxHelper", "error to create ttf type face: "
                                         + fontName);
@@ -423,13 +424,13 @@ public class Cocos2dxEditBoxHelper {
             return;
         }
 
-        final InputMethodManager imm = (InputMethodManager) mCocos2dxActivity.getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+        final InputMethodManager imm = (InputMethodManager) Cocos2dxContext.getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
         Cocos2dxEditBox editBox = mEditBoxArray.get(index);
         if (null != editBox) {
             editBox.requestFocus();
-            mCocos2dxActivity.getGLSurfaceView().requestLayout();
+            Cocos2dxContext.getGLSurfaceView().requestLayout();
             imm.showSoftInput(editBox, 0);
-            mCocos2dxActivity.getGLSurfaceView().setSoftKeyboardShown(true);
+            Cocos2dxContext.getGLSurfaceView().setSoftKeyboardShown(true);
         }
     }
 
@@ -439,14 +440,14 @@ public class Cocos2dxEditBoxHelper {
             return;
         }
         
-        final InputMethodManager imm = (InputMethodManager) mCocos2dxActivity.getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+        final InputMethodManager imm = (InputMethodManager) Cocos2dxContext.getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
         Cocos2dxEditBox editBox = mEditBoxArray.get(index);
         if (null != editBox) {
             imm.hideSoftInputFromWindow(editBox.getWindowToken(), 0);
-            mCocos2dxActivity.getGLSurfaceView().setSoftKeyboardShown(false);
-            mCocos2dxActivity.getGLSurfaceView().requestFocus();
+            Cocos2dxContext.getGLSurfaceView().setSoftKeyboardShown(false);
+            Cocos2dxContext.getGLSurfaceView().requestFocus();
             // can take effect after GLSurfaceView has focus
-            mCocos2dxActivity.hideVirtualButton();
+            Cocos2dxContext.hideVirtualButton();
         }
     }
 

@@ -196,6 +196,12 @@ bool jsb_run_script(const std::string& filePath)
     return se::ScriptEngine::getInstance()->runScript(filePath);
 }
 
+bool jsb_run_script_string(const char* scriptStr)
+{
+    se::AutoHandleScope hs;
+    return se::ScriptEngine::getInstance()->evalString(scriptStr);
+}
+
 namespace {
 
     static bool require(se::State& s)

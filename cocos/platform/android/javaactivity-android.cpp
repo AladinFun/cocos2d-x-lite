@@ -42,6 +42,9 @@ THE SOFTWARE.
 #include <android/api-level.h>
 #include <jni.h>
 #include <CCThread.h>
+#include <scripting/js-bindings/manual/jsb_global.h>
+
+
 
 #define  LOG_TAG    "main"
 #define  LOGD(...)  __android_log_print(ANDROID_LOG_DEBUG,LOG_TAG,__VA_ARGS__)
@@ -79,7 +82,7 @@ extern "C"
 JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *reserved)
 {
     JniHelper::setJavaVM(vm);
-
+    CCLOG("cocos JNI_Onload");
     cocos_android_app_init(JniHelper::getEnv());
 
     return JNI_VERSION_1_4;
@@ -87,6 +90,7 @@ JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *reserved)
 
 JNIEXPORT void Java_org_cocos2dx_lib_Cocos2dxRenderer_nativeInit(JNIEnv*  env, jobject thiz, jint w, jint h)
 {
+    CCLOG("Java_org_cocos2dx_lib_Cocos2dxRenderer_nativeInit");
     if(!cocos2d::Application::getInstance()) {
         cocos_android_app_init(env);
     }
@@ -135,19 +139,23 @@ JNIEXPORT jintArray Java_org_cocos2dx_lib_Cocos2dxActivity_getGLContextAttrs(JNI
     return glContextAttrsJava;
 }
 
-JNIEXPORT jintArray Java_org_cocos2dx_lib_Cocos2dxActivity_endGame(JNIEnv*  env, jobject thiz)
+
+JNIEXPORT jintArray Java_org_cocos2dx_lib_Cocos2dxActivity_startRuntime(JNIEnv*  env, jobject thiz, jstring data)
 {
-    cocos2d::Application::firstTime = true;
+    CCLOG("start runtime");
+    cocos2d::Application::isRunning = true;
+    std::string dataStr = JniHelper::jstring2string(data);
+    std::string startScript = "window.startGame(" + dataStr + ");";
+
+    CCLOG("run script: main.js");
+    jsb_run_script("main.js");
+    CCLOG("run script: %s", startScript.c_str());
+    jsb_run_script_string(startScript.c_str());
 }
 
-JNIEXPORT jintArray Java_org_cocos2dx_lib_Cocos2dxActivity_cleanup(JNIEnv*  env, jobject thiz)
+JNIEXPORT jintArray Java_org_cocos2dx_lib_Cocos2dxActivity_stopRuntime(JNIEnv*  env, jobject thiz)
 {
-    cocos2d::Director::getInstance()->end();
-    cocos2d::Director::getInstance()->mainLoop();
-    cocos2d::Director::getInstance()->getEventDispatcher()->setEnabled(false);
-
-    cocos2d::Application::destroyInstance();
-    cocos2d::Director::destroyInstance();
+    cocos2d::Director::getInstance()->restart();
 }
 
 

@@ -68,6 +68,7 @@ public:
     static Application* getInstance();
 
     static void destroyInstance();
+    static bool isRunning;
 
     /**
     @brief Get current language config

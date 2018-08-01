@@ -46,6 +46,10 @@ static bool js_cocos2dx_extension_loadRemoteImage(se::State& s)
 
         auto onSuccess = [func](Texture2D* tex) -> bool {
 
+            if(!Application::isRunning) {
+                return false;
+            }
+
             se::ScriptEngine::getInstance()->clearException();
             se::AutoHandleScope hs;
 
@@ -68,6 +72,10 @@ static bool js_cocos2dx_extension_loadRemoteImage(se::State& s)
         };
 
         auto onError = [func](){
+
+            if(!Application::isRunning) {
+                return false;
+            }
 
             se::ScriptEngine::getInstance()->clearException();
             se::AutoHandleScope hs;

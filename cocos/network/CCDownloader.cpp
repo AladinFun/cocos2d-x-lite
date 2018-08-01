@@ -79,7 +79,10 @@ namespace cocos2d { namespace network {
                                        int64_t totalBytesExpected,
                                        std::function<int64_t(void *buffer, int64_t len)>& /*transferDataToBuffer*/)
         {
-            if (Application::isRunning && onTaskProgress)
+            if(!Application::isRunning) {
+                return;
+            }
+            if (onTaskProgress)
             {
                 onTaskProgress(task, bytesReceived, totalBytesReceived, totalBytesExpected);
             }
@@ -91,6 +94,10 @@ namespace cocos2d { namespace network {
                                      const std::string& errorStr,
                                      std::vector<unsigned char>& data)
         {
+            if(!Application::isRunning) {
+                return;
+            }
+
             if (DownloadTask::ERROR_NO_ERROR != errorCode)
             {
                 if (onTaskError)

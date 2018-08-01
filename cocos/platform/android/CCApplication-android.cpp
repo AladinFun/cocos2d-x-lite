@@ -50,7 +50,7 @@ NS_CC_BEGIN
 
 // sharedApplication pointer
 Application * Application::sm_pSharedApplication = nullptr;
-    bool Application::firstTime = true;
+bool Application::firstTime = true;
 
 
 Application::Application()
@@ -67,6 +67,7 @@ Application::~Application()
 
 int Application::run()
 {
+    CCLOG("Application::run");
     // Initialize instance and cocos2d.
     if (! applicationDidFinishLaunching())
     {
@@ -96,6 +97,8 @@ void Application::destroyInstance()
         sm_pSharedApplication = nullptr;
     }
 }
+
+bool Application::isRunning = true;
 
 const char * Application::getCurrentLanguageCode()
 {

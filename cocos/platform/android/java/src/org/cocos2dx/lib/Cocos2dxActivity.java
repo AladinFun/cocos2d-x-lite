@@ -24,6 +24,7 @@ THE SOFTWARE.
  ****************************************************************************/
 package org.cocos2dx.lib;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
@@ -49,6 +50,7 @@ import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.egl.EGLDisplay;
 
 public abstract class Cocos2dxActivity extends AppCompatActivity implements Cocos2dxHelperListener {
+
     // ===========================================================
     // Constants
     // ===========================================================
@@ -58,10 +60,10 @@ public abstract class Cocos2dxActivity extends AppCompatActivity implements Coco
     // ===========================================================
     // Fields
     // ===========================================================
-    
+
     private Cocos2dxGLSurfaceView mGLSurfaceView = null;
     private int[] mGLContextAttrs = null;
-    private Cocos2dxHandler mHandler = null;   
+    private Cocos2dxHandler mHandler = null;
     private static Cocos2dxActivity sContext = null;
     private Cocos2dxVideoHelper mVideoHelper = null;
     private Cocos2dxWebViewHelper mWebViewHelper = null;
@@ -69,7 +71,7 @@ public abstract class Cocos2dxActivity extends AppCompatActivity implements Coco
     private boolean hasFocus = false;
 
     public Cocos2dxGLSurfaceView getGLSurfaceView(){
-        return  mGLSurfaceView;
+        return mGLSurfaceView;
     }
 
     public class Cocos2dxEGLConfigChooser implements GLSurfaceView.EGLConfigChooser
@@ -161,7 +163,7 @@ public abstract class Cocos2dxActivity extends AppCompatActivity implements Coco
         }
 
         @Override
-        public EGLConfig chooseConfig(EGL10 egl, EGLDisplay display) 
+        public EGLConfig chooseConfig(EGL10 egl, EGLDisplay display)
         {
             int[] EGLattribs = {
                     EGL10.EGL_RED_SIZE, configAttribs[0],
@@ -274,16 +276,16 @@ public abstract class Cocos2dxActivity extends AppCompatActivity implements Coco
 
         sContext = this;
         this.mHandler = new Cocos2dxHandler(this);
-        
+
         Cocos2dxHelper.init(this);
-        
+
         this.mGLContextAttrs = getGLContextAttrs();
         this.init();
 
         if (mVideoHelper == null) {
             mVideoHelper = new Cocos2dxVideoHelper(this, mFrameLayout);
         }
-        
+
         if(mWebViewHelper == null){
             mWebViewHelper = new Cocos2dxWebViewHelper(mFrameLayout);
         }
@@ -298,10 +300,10 @@ public abstract class Cocos2dxActivity extends AppCompatActivity implements Coco
     }
 
     //native method,call GLViewImpl::getGLContextAttrs() to get the OpenGL ES context attributions
-    private static native int[] getGLContextAttrs();
-    public static native void cleanup();
-    public static native void endGame();
-    
+    public static native int[] getGLContextAttrs();
+    public static native void startRuntime(String data);
+    public static native void stopRuntime();
+
     // ===========================================================
     // Getter & Setter
     // ===========================================================
@@ -323,7 +325,7 @@ public abstract class Cocos2dxActivity extends AppCompatActivity implements Coco
     public void onWindowFocusChanged(boolean hasFocus) {
     	Log.d(TAG, "onWindowFocusChanged() hasFocus=" + hasFocus);
         super.onWindowFocusChanged(hasFocus);
-        
+
         this.hasFocus = hasFocus;
         resumeIfHasFocus();
     }
@@ -362,7 +364,7 @@ public abstract class Cocos2dxActivity extends AppCompatActivity implements Coco
         msg.obj = new Cocos2dxHandler.DialogMessage(pTitle, pMessage);
         this.mHandler.sendMessage(msg);
     }
-    
+
     @Override
     public void runOnGLThread(final Runnable pRunnable) {
         this.mGLSurfaceView.queueEvent(pRunnable);
@@ -384,7 +386,7 @@ public abstract class Cocos2dxActivity extends AppCompatActivity implements Coco
     // Methods
     // ===========================================================
     public void init() {
-        
+
         // FrameLayout
         ViewGroup.LayoutParams framelayout_params =
             new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,

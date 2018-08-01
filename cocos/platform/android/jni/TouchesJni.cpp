@@ -29,21 +29,31 @@ THE SOFTWARE.
 
 #include <android/log.h>
 #include <jni.h>
+#include "cocos2d.h"
 
 using namespace cocos2d;
 
 extern "C" {
     JNIEXPORT void JNICALL Java_org_cocos2dx_lib_Cocos2dxRenderer_nativeTouchesBegin(JNIEnv * env, jobject thiz, jint id, jfloat x, jfloat y) {
+        if(!cocos2d::Application::isRunning) {
+            return;
+        }
         intptr_t idlong = id;
         cocos2d::Director::getInstance()->getOpenGLView()->handleTouchesBegin(1, &idlong, &x, &y);
     }
 
     JNIEXPORT void JNICALL Java_org_cocos2dx_lib_Cocos2dxRenderer_nativeTouchesEnd(JNIEnv * env, jobject thiz, jint id, jfloat x, jfloat y) {
+        if(!cocos2d::Application::isRunning) {
+            return;
+        }
         intptr_t idlong = id;
         cocos2d::Director::getInstance()->getOpenGLView()->handleTouchesEnd(1, &idlong, &x, &y);
     }
 
     JNIEXPORT void JNICALL Java_org_cocos2dx_lib_Cocos2dxRenderer_nativeTouchesMove(JNIEnv * env, jobject thiz, jintArray ids, jfloatArray xs, jfloatArray ys) {
+        if(!cocos2d::Application::isRunning) {
+            return;
+        }
         int size = env->GetArrayLength(ids);
         jint id[size];
         jfloat x[size];
@@ -61,6 +71,9 @@ extern "C" {
     }
 
     JNIEXPORT void JNICALL Java_org_cocos2dx_lib_Cocos2dxRenderer_nativeTouchesCancel(JNIEnv * env, jobject thiz, jintArray ids, jfloatArray xs, jfloatArray ys) {
+        if(!cocos2d::Application::isRunning) {
+            return;
+        }
         int size = env->GetArrayLength(ids);
         jint id[size];
         jfloat x[size];
@@ -102,6 +115,9 @@ extern "C" {
     };
 
     JNIEXPORT jboolean JNICALL Java_org_cocos2dx_lib_Cocos2dxRenderer_nativeKeyEvent(JNIEnv * env, jobject thiz, jint keyCode, jboolean isPressed) {
+        if(!cocos2d::Application::isRunning) {
+            return JNI_FALSE;
+        }
         Director* pDirector = Director::getInstance();
 
         auto iterKeyCode = g_keyCodeMap.find(keyCode);

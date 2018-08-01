@@ -100,13 +100,13 @@ public class Cocos2dxHelper {
     // ===========================================================
 
     public static void runOnGLThread(final Runnable r) {
-        ((Cocos2dxActivity)sActivity).runOnGLThread(r);
+        Cocos2dxContext.runOnGLThread(r);
     }
 
     private static boolean sInited = false;
     public static void init(final Activity activity) {
         sActivity = activity;
-        Cocos2dxHelper.sCocos2dxHelperListener = (Cocos2dxHelperListener)activity;
+        Cocos2dxHelper.sCocos2dxHelperListener = Cocos2dxContext.delegator;
         if (!sInited) {
 
             PackageManager pm = activity.getPackageManager();
@@ -161,12 +161,12 @@ public class Cocos2dxHelper {
             
             int versionCode = 1;
             try {
-                versionCode = Cocos2dxActivity.getContext().getPackageManager().getPackageInfo(Cocos2dxHelper.getCocos2dxPackageName(), 0).versionCode;
+                versionCode = Cocos2dxContext.getActivity().getPackageManager().getPackageInfo(Cocos2dxHelper.getCocos2dxPackageName(), 0).versionCode;
             } catch (NameNotFoundException e) {
                 e.printStackTrace();
             }
             try {
-                Cocos2dxHelper.sOBBFile = APKExpansionSupport.getAPKExpansionZipFile(Cocos2dxActivity.getContext(), versionCode, 0);
+                Cocos2dxHelper.sOBBFile = APKExpansionSupport.getAPKExpansionZipFile(Cocos2dxContext.getActivity(), versionCode, 0);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -275,7 +275,7 @@ public class Cocos2dxHelper {
     }
 
     public static void setKeepScreenOn(boolean value) {
-        ((Cocos2dxActivity)sActivity).setKeepScreenOn(value);
+        Cocos2dxContext.setKeepScreenOn(value);
     }
 
     public static void vibrate(float duration) {
@@ -284,7 +284,7 @@ public class Cocos2dxHelper {
 
  	public static String getVersion() {
  		try {
- 			String version = Cocos2dxActivity.getContext().getPackageManager().getPackageInfo(Cocos2dxActivity.getContext().getPackageName(), 0).versionName;
+ 			String version = Cocos2dxContext.getActivity().getPackageManager().getPackageInfo(Cocos2dxContext.getActivity().getPackageName(), 0).versionName;
  			return version;
  		} catch(Exception e) {
  			return "";

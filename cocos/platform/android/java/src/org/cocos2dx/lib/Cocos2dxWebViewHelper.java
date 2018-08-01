@@ -24,6 +24,7 @@ THE SOFTWARE.
  ****************************************************************************/
 package org.cocos2dx.lib;
 
+import android.app.Activity;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.SparseArray;
@@ -38,7 +39,7 @@ import java.util.concurrent.FutureTask;
 public class Cocos2dxWebViewHelper {
     private static final String TAG = Cocos2dxWebViewHelper.class.getSimpleName();
     private static Handler sHandler;
-    private static Cocos2dxActivity sCocos2dxActivity;
+    private static Activity sCocos2dxActivity;
     private static FrameLayout sLayout;
 
     private static SparseArray<Cocos2dxWebView> webViews;
@@ -48,7 +49,7 @@ public class Cocos2dxWebViewHelper {
         Cocos2dxWebViewHelper.sLayout = layout;
         Cocos2dxWebViewHelper.sHandler = new Handler(Looper.myLooper());
 
-        Cocos2dxWebViewHelper.sCocos2dxActivity = (Cocos2dxActivity) Cocos2dxActivity.getContext();
+        Cocos2dxWebViewHelper.sCocos2dxActivity = Cocos2dxContext.getActivity();
         Cocos2dxWebViewHelper.webViews = new SparseArray<Cocos2dxWebView>();
     }
 

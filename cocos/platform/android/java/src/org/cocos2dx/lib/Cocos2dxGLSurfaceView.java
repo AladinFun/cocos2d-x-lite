@@ -172,6 +172,7 @@ public class Cocos2dxGLSurfaceView extends GLSurfaceView {
 
     @Override
     public void onResume() {
+        Log.d(TAG, "onResume");
         super.onResume();
         this.setRenderMode(RENDERMODE_CONTINUOUSLY);
         this.queueEvent(new Runnable() {
@@ -184,6 +185,7 @@ public class Cocos2dxGLSurfaceView extends GLSurfaceView {
 
     @Override
     public void onPause() {
+        Log.d(TAG, "onPause");
         this.queueEvent(new Runnable() {
             @Override
             public void run() {
@@ -193,9 +195,20 @@ public class Cocos2dxGLSurfaceView extends GLSurfaceView {
         this.setRenderMode(RENDERMODE_WHEN_DIRTY);
         //super.onPause();
     }
+    @Override
+    public boolean dispatchTouchEvent(MotionEvent ev) {
+        if(!this.isEnabled()) {
+            return false;
+        }
+        return super.dispatchTouchEvent(ev);
+    }
 
     @Override
     public boolean onTouchEvent(final MotionEvent pMotionEvent) {
+        Log.d(TAG, "onTouchEvent " + this.isEnabled() + " " + (pMotionEvent.getAction() & MotionEvent.ACTION_MASK));
+        if(!this.isEnabled()) {
+            return false;
+        }
         // these data are used in ACTION_MOVE and ACTION_CANCEL
         final int pointerNumber = pMotionEvent.getPointerCount();
         final int[] ids = new int[pointerNumber];
@@ -313,6 +326,9 @@ public class Cocos2dxGLSurfaceView extends GLSurfaceView {
 
     @Override
     public boolean onKeyDown(final int pKeyCode, final KeyEvent pKeyEvent) {
+        if(!this.isEnabled()) {
+            return false;
+        }
         switch (pKeyCode) {
             case KeyEvent.KEYCODE_BACK:
                 Cocos2dxVideoHelper.mVideoHandler.sendEmptyMessage(Cocos2dxVideoHelper.KeyEventBack);
@@ -338,6 +354,9 @@ public class Cocos2dxGLSurfaceView extends GLSurfaceView {
 
     @Override
     public boolean onKeyUp(final int keyCode, KeyEvent event) {
+        if(!this.isEnabled()) {
+            return false;
+        }
         switch (keyCode) {
             case KeyEvent.KEYCODE_BACK:
             case KeyEvent.KEYCODE_MENU:

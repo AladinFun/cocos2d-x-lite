@@ -15,9 +15,9 @@ using namespace cocos2d;
 extern "C" {
 
     JNIEXPORT void JNICALL Java_org_cocos2dx_lib_Cocos2dxRenderer_nativeRender(JNIEnv* env) {
-        if(Director::getInstance() && Application::getInstance()) {
+//        if(Application::isRunning) {
             cocos2d::Director::getInstance()->mainLoop();
-        }
+//        }
     }
 
     JNIEXPORT void JNICALL Java_org_cocos2dx_lib_Cocos2dxRenderer_nativeOnPause() {
