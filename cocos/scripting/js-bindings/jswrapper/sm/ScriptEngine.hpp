@@ -49,7 +49,7 @@ namespace se {
         AutoHandleScope();
         ~AutoHandleScope();
     };
-    
+
     /**
      * ScriptEngine is a sington which represents a context of JavaScript VM.
      */
@@ -66,6 +66,7 @@ namespace se {
          *  @brief Destroys the instance of script engine.
          */
         static void destroyInstance();
+		static uint32_t getVmId();
 
         /**
          *  @brief Gets the global object of JavaScript VM.
@@ -95,7 +96,7 @@ namespace se {
          *  @note This method will create JavaScript context and global object.
          */
         bool init();
-        
+
         /**
          *  @brief Adds a hook function before initializing script engine.
          *  @param[in] hook A hook function to be invoked before initializing script engine.
@@ -287,7 +288,7 @@ namespace se {
         std::string _debuggerServerAddr;
         uint32_t _debuggerServerPort;
 
-        uint32_t _vmId;
+        static uint32_t _vmId;
 
         bool _isGarbageCollecting;
         bool _isValid;

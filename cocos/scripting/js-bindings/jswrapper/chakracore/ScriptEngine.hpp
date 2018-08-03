@@ -49,7 +49,7 @@ namespace se {
         AutoHandleScope() {}
         ~AutoHandleScope() {}
     };
-    
+
     /**
      * ScriptEngine is a sington which represents a context of JavaScript VM.
      */
@@ -66,6 +66,7 @@ namespace se {
          *  @brief Destroys the instance of script engine.
          */
         static void destroyInstance();
+		static uint32_t getVmId();
 
         /**
          *  @brief Gets the global object of JavaScript VM.

@@ -330,6 +330,12 @@ namespace se {
         __instance = nullptr;
     }
 
+	uint32_t ScriptEngine::_vmId = 0;
+    uint32_t ScriptEngine::getVmId()
+    {
+        return ScriptEngine::_vmId;
+    }
+
     ScriptEngine::ScriptEngine()
 //    : _platform(nullptr)
     : _isolate(nullptr)
@@ -342,7 +348,7 @@ namespace se {
     , _isolateData(nullptr)
 #endif
     , _debuggerServerPort(0)
-    , _vmId(0)
+    // , _vmId(0)
     , _isValid(false)
     , _isGarbageCollecting(false)
     , _isInCleanup(false)

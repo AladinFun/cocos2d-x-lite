@@ -176,13 +176,19 @@ namespace se {
         __instance = nullptr;
     }
 
+	uint32_t ScriptEngine::_vmId = 0;
+    uint32_t ScriptEngine::getVmId()
+    {
+        return ScriptEngine::_vmId;
+    }
+
     ScriptEngine::ScriptEngine()
             : _rt(JS_INVALID_RUNTIME_HANDLE)
             , _cx(JS_INVALID_REFERENCE)
             , _globalObj(nullptr)
             , _exceptionCallback(nullptr)
             , _currentSourceContext(0)
-            , _vmId(0)
+            // , _vmId(0)
             , _isValid(false)
             , _isInCleanup(false)
             , _isErrorHandleWorking(false)

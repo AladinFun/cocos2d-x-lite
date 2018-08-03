@@ -88,7 +88,7 @@ namespace se {
          *  @brief Destroys the instance of script engine.
          */
         static void destroyInstance();
-
+		static uint32_t getVmId();
         bool isRunning();
         void onSurfaceDestroy();
 
@@ -319,7 +319,7 @@ namespace se {
         std::string _debuggerServerAddr;
         uint32_t _debuggerServerPort;
 
-        uint32_t _vmId;
+        static uint32_t _vmId;
 
         bool _isValid;
         bool _isGarbageCollecting;

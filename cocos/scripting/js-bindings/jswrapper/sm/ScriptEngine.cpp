@@ -351,6 +351,12 @@ namespace se {
         __instance = nullptr;
     }
 
+	uint32_t ScriptEngine::_vmId = 0;
+    uint32_t ScriptEngine::getVmId()
+    {
+        return ScriptEngine::_vmId;
+    }
+
     ScriptEngine::ScriptEngine()
             : _cx(nullptr)
             , _globalObj(nullptr)
@@ -358,7 +364,7 @@ namespace se {
             , _oldCompartment(nullptr)
             , _exceptionCallback(nullptr)
             , _debuggerServerPort(0)
-            , _vmId(0)
+            // , _vmId(0)
             , _isGarbageCollecting(false)
             , _isValid(false)
             , _isInCleanup(false)
@@ -1052,9 +1058,9 @@ namespace se {
                 assert(compileSucceed);
             }
         }
-        
+
         clearException();
-        
+
         if (!compileSucceed)
         {
             SE_LOGD("ScriptEngine::compileScript fail:%s\n", path.c_str());
@@ -1119,7 +1125,7 @@ namespace se {
                 internal::jsToSeValue(_cx, rval, ret);
             }
         }
-        
+
         return ok;
     }
 
