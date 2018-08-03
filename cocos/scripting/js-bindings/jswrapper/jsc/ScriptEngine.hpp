@@ -66,6 +66,8 @@ namespace se {
          *  @brief Destroys the instance of script engine.
          */
         static void destroyInstance();
+        
+        static uint32_t getVmId();
 
         /**
          *  @brief Gets the global object of JavaScript VM.
@@ -295,7 +297,7 @@ namespace se {
         Object* _globalObj;
         ExceptionCallback _exceptionCallback;
 
-        uint32_t _vmId;
+        static uint32_t _vmId;
 
         bool _isGarbageCollecting;
         bool _isValid;

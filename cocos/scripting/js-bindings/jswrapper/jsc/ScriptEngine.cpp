@@ -207,12 +207,18 @@ namespace se {
         delete __instance;
         __instance = nullptr;
     }
+    
+    uint32_t ScriptEngine::_vmId = 0;
+    uint32_t ScriptEngine::getVmId()
+    {
+        return ScriptEngine::_vmId;
+    }
 
     ScriptEngine::ScriptEngine()
             : _cx(nullptr)
             , _globalObj(nullptr)
             , _exceptionCallback(nullptr)
-            , _vmId(0)
+//            , _vmId(0)
             , _isGarbageCollecting(false)
             , _isValid(false)
             , _isInCleanup(false)
@@ -220,7 +226,7 @@ namespace se {
             , _isDebuggerEnabled(false)
     {
     }
-
+    
     bool ScriptEngine::init()
     {
         cleanup();
