@@ -43,6 +43,8 @@ static bool js_cocos2dx_extension_loadRemoteImage(se::State& s)
         assert(func.isObject() && func.toObject()->isFunction());
 
         func.toObject()->root();
+        
+        uint32_t vmid = se::ScriptEngine::getVmId();
 
         auto onSuccess = [func](Texture2D* tex) -> bool {
 
@@ -94,8 +96,8 @@ static bool js_cocos2dx_extension_loadRemoteImage(se::State& s)
         else
         {
             auto downloader = new (std::nothrow) cocos2d::network::Downloader();
-            downloader->onDataTaskSuccess = [downloader, url, onSuccess, onError](const cocos2d::network::DownloadTask& task, std::vector<unsigned char>& data){
-                if(!Application::isRunning) {
+            downloader->onDataTaskSuccess = [downloader, url, onSuccess, onError, vmid](const cocos2d::network::DownloadTask& task, std::vector<unsigned char>& data){
+                if(!Application::isRunning || se::ScriptEngine::getVmId() != vmid) {
                     delete downloader;
                     return;
                 }
@@ -126,9 +128,9 @@ static bool js_cocos2dx_extension_loadRemoteImage(se::State& s)
                 });
             };
 
-            downloader->onTaskError = [downloader, onError](const cocos2d::network::DownloadTask& task, int errorCode, int errorCodeInternal, const std::string& errorStr)
+            downloader->onTaskError = [downloader, onError, vmid](const cocos2d::network::DownloadTask& task, int errorCode, int errorCodeInternal, const std::string& errorStr)
             {
-                if(!Application::isRunning) {
+                if(!Application::isRunning || se::ScriptEngine::getVmId() != vmid) {
                     delete downloader;
                     return;
                 }
