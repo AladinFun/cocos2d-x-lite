@@ -31,6 +31,10 @@
 #include "../State.hpp"
 #include "../MappingUtils.hpp"
 #include <cstring>
+#include <CCEventType.h>
+#include <CCDirector.h>
+#include <CCEventDispatcher.h>
+#include <CCEventListenerCustom.h>
 
 #if SE_ENABLE_INSPECTOR
 #include "inspector_agent.h"
@@ -206,7 +210,6 @@ namespace se {
     } // namespace {
 
     static v8::Platform* platform = nullptr;
-    static v8::ArrayBuffer::Allocator* allocator = nullptr;
 
     void ScriptEngine::onFatalErrorCallback(const char* location, const char* message)
     {
@@ -331,7 +334,7 @@ namespace se {
 //    : _platform(nullptr)
     : _isolate(nullptr)
     , _handleScope(nullptr)
-//    , _allocator(nullptr)
+    , _allocator(nullptr)
     , _globalObj(nullptr)
     , _exceptionCallback(nullptr)
 #if SE_ENABLE_INSPECTOR
@@ -344,6 +347,7 @@ namespace se {
     , _isGarbageCollecting(false)
     , _isInCleanup(false)
     , _isErrorHandleWorking(false)
+    , _rebindListener(nullptr)
     {
         //        RETRUN_VAL_IF_FAIL(v8::V8::InitializeICUDefaultLocation(nullptr, "/Users/james/Project/v8/out.gn/x64.debug/icudtl.dat"), false);
         //        v8::V8::InitializeExternalStartupData("/Users/james/Project/v8/out.gn/x64.debug/natives_blob.bin", "/Users/james/Project/v8/out.gn/x64.debug/snapshot_blob.bin"); //TODO
@@ -363,6 +367,10 @@ namespace se {
 //        v8::V8::ShutdownPlatform();
 //        delete _platform;
 //        _platform = nullptr;
+        if(_rebindListener) {
+            cocos2d::Director::getInstance()->getEventDispatcher()->removeEventListener(_rebindListener);
+            _rebindListener = nullptr;
+        }
     }
 
     bool ScriptEngine::init()
@@ -378,12 +386,12 @@ namespace se {
         _beforeInitHookArray.clear();
 
 
-        if(!allocator) {
-            allocator = v8::ArrayBuffer::Allocator::NewDefaultAllocator();
-        }
+        _allocator = v8::ArrayBuffer::Allocator::NewDefaultAllocator();
         // Create a new Isolate and make it the current one.
-        _createParams.array_buffer_allocator = allocator;
+        _createParams.array_buffer_allocator = _allocator;
         _isolate = v8::Isolate::New(_createParams);
+        SE_LOGD("create isolate: %p", _isolate);
+        v8::Locker locker(_isolate);
         v8::HandleScope hs(_isolate);
         _isolate->Enter();
 
@@ -457,7 +465,8 @@ namespace se {
         _isInCleanup = true;
 
         {
-            AutoHandleScope hs;
+            v8::Locker locker(_isolate);
+            v8::HandleScope hs(_isolate);
             for (const auto& hook : _beforeCleanupHookArray)
             {
                 hook();
@@ -491,15 +500,17 @@ namespace se {
                 _env = nullptr;
             }
 #endif
-
-            _context.Get(_isolate)->Exit();
+            if(!_isolate->GetEnteredContext().IsEmpty() && _isolate->GetEnteredContext() == _context.Get(_isolate)) {
+                _context.Get(_isolate)->Exit();
+            }
             _context.Reset();
             _isolate->Exit();
         }
         _isolate->Dispose();
 
-//        delete _allocator;
-//        _allocator = nullptr;
+        delete _allocator;
+        SE_LOGD("dispose isolate: %p", _isolate);
+        _allocator = nullptr;
         _isolate = nullptr;
         _globalObj = nullptr;
         _isValid = false;
@@ -517,6 +528,20 @@ namespace se {
         NonRefNativePtrCreatedByCtorMap::destroy();
 
         SE_LOGD("ScriptEngine::cleanup end ...\n");
+    }
+
+    void ScriptEngine::onSurfaceDestroy()
+    {
+        if(v8::Isolate::GetCurrent() != NULL) {
+            CCLOG("exit isolate %p", _isolate);
+            v8::Locker locker(_isolate);
+            v8::HandleScope hs(_isolate);
+            if(_isolate->InContext()) {
+                _context.Get(_isolate)->Exit();
+            }
+            _isolate->Exit();
+            CCLOG("isolate %p is now %s in use", _isolate, _isolate->IsInUse() ? "" : "not");
+        }
     }
 
     Object* ScriptEngine::getGlobalObject() const
@@ -555,8 +580,8 @@ namespace se {
         if (!init())
             return false;
 
-        se::AutoHandleScope hs;
-
+        v8::Locker locker(_isolate);
+        v8::HandleScope hs(_isolate);
         // debugger
         if (isDebuggerEnabled())
         {
@@ -588,6 +613,26 @@ namespace se {
 
         // After ScriptEngine is started, _registerCallbackArray isn't needed. Therefore, clear it here.
         _registerCallbackArray.clear();
+
+        SE_LOGD("script engine started");
+
+        if(!_rebindListener) {
+            _rebindListener = cocos2d::EventListenerCustom::create(EVENT_RENDERER_RECREATED, [this](cocos2d::EventCustom* event){
+                if(_isolate && _isolate->IsDead()) {
+                    SE_LOGD("cur isolate is dead.");
+                }
+                if(_isolate && !v8::Isolate::GetCurrent()) {
+                    v8::Locker locker(_isolate);
+                    SE_LOGD("rebind isolate to new thread");
+                    v8::HandleScope hs(_isolate);
+                    _isolate->DiscardThreadSpecificMetadata();
+                    _isolate->Enter();
+                    _context.Get(_isolate)->Enter();
+                }
+            });
+
+            cocos2d::Director::getInstance()->getEventDispatcher()->addEventListenerWithFixedPriority(_rebindListener, -1);
+        }
 
         return ok;
     }
@@ -639,6 +684,9 @@ namespace se {
         }
 
         std::string scriptStr(script, length);
+
+        v8::Locker locker(_isolate);
+        v8::HandleScope hs(_isolate);
 
         v8::MaybeLocal<v8::String> source = v8::String::NewFromUtf8(_isolate, scriptStr.c_str(), v8::NewStringType::kNormal);
         if (source.IsEmpty())
@@ -694,6 +742,10 @@ namespace se {
 
         SE_LOGE("ScriptEngine::runScript script %s, buffer is empty!\n", path.c_str());
         return false;
+    }
+
+    bool ScriptEngine::isRunning() {
+        return v8::Isolate::GetCurrent() != NULL;
     }
 
     void ScriptEngine::clearException()

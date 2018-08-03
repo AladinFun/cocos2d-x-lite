@@ -33,8 +33,13 @@ import android.util.AttributeSet;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
+import android.view.SurfaceHolder;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public class Cocos2dxGLSurfaceView extends GLSurfaceView {
     // ===========================================================
@@ -201,6 +206,35 @@ public class Cocos2dxGLSurfaceView extends GLSurfaceView {
             return false;
         }
         return super.dispatchTouchEvent(ev);
+    }
+
+    @Override
+    public void surfaceDestroyed(SurfaceHolder holder) {
+        // Surface will be destroyed when we return
+        Cocos2dxRenderer.nativeOnSurfaceDestroy();
+        super.surfaceDestroyed(holder);
+    }
+
+    private List<Runnable> queuedRunnable = Collections.synchronizedList(new ArrayList<Runnable>());
+
+    @Override
+    public void queueEvent(final Runnable r) {
+        queuedRunnable.add(r);
+        super.queueEvent(new Runnable() {
+            @Override
+            public void run() {
+                if(queuedRunnable.indexOf(r) != -1) {
+                    queuedRunnable.remove(r);
+                    r.run();
+                }
+            }
+        });
+    }
+
+    public void runAllQueuedEvents() {
+        while(queuedRunnable.size() > 0) {
+            queuedRunnable.remove(0).run();
+        }
     }
 
     @Override

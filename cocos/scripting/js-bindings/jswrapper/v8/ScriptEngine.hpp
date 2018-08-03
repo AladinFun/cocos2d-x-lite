@@ -24,6 +24,7 @@
 #pragma once
 
 #include "../config.hpp"
+#include "cocos2d.h"
 
 #if SCRIPT_ENGINE_TYPE == SCRIPT_ENGINE_V8
 
@@ -59,13 +60,15 @@ namespace se {
     {
     public:
         AutoHandleScope()
-        : _handleScope(v8::Isolate::GetCurrent())
+        : _locker(v8::Isolate::GetCurrent()),
+          _handleScope(v8::Isolate::GetCurrent())
         {
         }
         ~AutoHandleScope()
         {
         }
     private:
+        v8::Locker _locker;
         v8::HandleScope _handleScope;
     };
 
@@ -85,6 +88,9 @@ namespace se {
          *  @brief Destroys the instance of script engine.
          */
         static void destroyInstance();
+
+        bool isRunning();
+        void onSurfaceDestroy();
 
         /**
          *  @brief Gets the global object of JavaScript VM.
@@ -299,7 +305,7 @@ namespace se {
 //      v8::Platform* _platform;
         v8::Isolate* _isolate;
         v8::HandleScope* _handleScope;
-//        v8::ArrayBuffer::Allocator* _allocator;
+        v8::ArrayBuffer::Allocator* _allocator;
         Object* _globalObj;
 
         FileOperationDelegate _fileOperationDelegate;
@@ -319,6 +325,8 @@ namespace se {
         bool _isGarbageCollecting;
         bool _isInCleanup;
         bool _isErrorHandleWorking;
+
+        cocos2d::EventListenerCustom* _rebindListener;
     };
 
 } // namespace se {

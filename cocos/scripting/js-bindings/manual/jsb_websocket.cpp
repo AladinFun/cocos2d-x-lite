@@ -55,6 +55,10 @@ private:
 public:
     virtual void onOpen(WebSocket* ws) override
     {
+        if(!se::ScriptEngine::getInstance()->isRunning()) {
+            return;
+        }
+
         se::ScriptEngine::getInstance()->clearException();
         se::AutoHandleScope hs;
 
@@ -90,6 +94,9 @@ public:
 
     virtual void onMessage(WebSocket* ws, const WebSocket::Data& data) override
     {
+        if(!se::ScriptEngine::getInstance()->isRunning()) {
+            return;
+        }
         se::ScriptEngine::getInstance()->clearException();
         se::AutoHandleScope hs;
 
@@ -152,6 +159,9 @@ public:
 
     virtual void onClose(WebSocket* ws) override
     {
+        if(!se::ScriptEngine::getInstance()->isRunning()) {
+            return;
+        }
         se::ScriptEngine::getInstance()->clearException();
         se::AutoHandleScope hs;
 
@@ -199,6 +209,9 @@ public:
 
     virtual void onError(WebSocket* ws, const WebSocket::ErrorCode& error) override
     {
+        if(!se::ScriptEngine::getInstance()->isRunning()) {
+            return;
+        }
         se::ScriptEngine::getInstance()->clearException();
         se::AutoHandleScope hs;
 

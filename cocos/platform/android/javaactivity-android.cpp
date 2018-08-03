@@ -43,8 +43,7 @@ THE SOFTWARE.
 #include <jni.h>
 #include <CCThread.h>
 #include <scripting/js-bindings/manual/jsb_global.h>
-
-
+#include <scripting/js-bindings/manual/ScriptingCore.h>
 
 #define  LOG_TAG    "main"
 #define  LOGD(...)  __android_log_print(ANDROID_LOG_DEBUG,LOG_TAG,__VA_ARGS__)
@@ -119,6 +118,12 @@ JNIEXPORT void Java_org_cocos2dx_lib_Cocos2dxRenderer_nativeInit(JNIEnv*  env, j
         director->setGLDefaultValues();
     }
     cocos2d::network::_preloadJavaDownloaderClass();
+}
+
+JNIEXPORT void Java_org_cocos2dx_lib_Cocos2dxRenderer_nativeOnSurfaceDestroy(JNIEnv*  env, jobject thiz)
+{
+    CCLOG("Java_org_cocos2dx_lib_Cocos2dxRenderer_nativeOnSurfaceDestroy");
+    jsb_on_surface_destroy();
 }
 
 JNIEXPORT jintArray Java_org_cocos2dx_lib_Cocos2dxActivity_getGLContextAttrs(JNIEnv*  env, jobject thiz)

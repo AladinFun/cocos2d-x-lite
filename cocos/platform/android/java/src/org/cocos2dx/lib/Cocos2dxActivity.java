@@ -416,7 +416,7 @@ public abstract class Cocos2dxActivity extends AppCompatActivity implements Coco
         if (isAndroidEmulator())
            this.mGLSurfaceView.setEGLConfigChooser(8, 8, 8, 8, 16, 0);
 
-        this.mGLSurfaceView.setCocos2dxRenderer(new Cocos2dxRenderer());
+        this.mGLSurfaceView.setCocos2dxRenderer(new Cocos2dxRenderer(this.mGLSurfaceView));
         this.mGLSurfaceView.setCocos2dxEditText(edittext);
 
         // Set framelayout as the content view

@@ -18,5 +18,7 @@ bool jsb_enable_debugger(const std::string& debuggerServerAddr, uint32_t port);
 bool jsb_set_extend_property(const char* ns, const char* clsName);
 bool jsb_run_script(const std::string& filePath);
 bool jsb_run_script_string(const char* scriptStr);
-
+#if SCRIPT_ENGINE_TYPE == SCRIPT_ENGINE_V8
+void jsb_on_surface_destroy();
+#endif
 void jsb_set_xxtea_key(const std::string& key);

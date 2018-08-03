@@ -192,15 +192,20 @@ bool jsb_set_extend_property(const char* ns, const char* clsName)
 
 bool jsb_run_script(const std::string& filePath)
 {
-    se::AutoHandleScope hs;
     return se::ScriptEngine::getInstance()->runScript(filePath);
 }
 
 bool jsb_run_script_string(const char* scriptStr)
 {
-    se::AutoHandleScope hs;
     return se::ScriptEngine::getInstance()->evalString(scriptStr);
 }
+
+#if SCRIPT_ENGINE_TYPE == SCRIPT_ENGINE_V8
+void jsb_on_surface_destroy()
+{
+    se::ScriptEngine::getInstance()->onSurfaceDestroy();
+}
+#endif
 
 namespace {
 
