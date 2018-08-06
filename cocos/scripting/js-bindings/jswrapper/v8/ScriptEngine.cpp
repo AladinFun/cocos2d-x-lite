@@ -377,6 +377,12 @@ namespace se {
             cocos2d::Director::getInstance()->getEventDispatcher()->removeEventListener(_rebindListener);
             _rebindListener = nullptr;
         }
+
+        delete _allocator;
+        SE_LOGD("dispose isolate: %p", _isolate);
+        _allocator = nullptr;
+        _isolate->Dispose();
+        _isolate = nullptr;
     }
 
     bool ScriptEngine::init()
@@ -391,12 +397,13 @@ namespace se {
         }
         _beforeInitHookArray.clear();
 
-
-        _allocator = v8::ArrayBuffer::Allocator::NewDefaultAllocator();
-        // Create a new Isolate and make it the current one.
-        _createParams.array_buffer_allocator = _allocator;
-        _isolate = v8::Isolate::New(_createParams);
-        SE_LOGD("create isolate: %p", _isolate);
+        if(!_isolate) {
+            _allocator = v8::ArrayBuffer::Allocator::NewDefaultAllocator();
+            // Create a new Isolate and make it the current one.
+            _createParams.array_buffer_allocator = _allocator;
+            _isolate = v8::Isolate::New(_createParams);
+            SE_LOGD("create isolate: %p", _isolate);
+        }
         v8::Locker locker(_isolate);
         v8::HandleScope hs(_isolate);
         _isolate->Enter();
@@ -512,12 +519,12 @@ namespace se {
             _context.Reset();
             _isolate->Exit();
         }
-        _isolate->Dispose();
+        _isolate->DumpAndResetStats();
 
-        delete _allocator;
-        SE_LOGD("dispose isolate: %p", _isolate);
-        _allocator = nullptr;
-        _isolate = nullptr;
+//        delete _allocator;
+//        SE_LOGD("dispose isolate: %p", _isolate);
+//        _allocator = nullptr;
+//        _isolate = nullptr;
         _globalObj = nullptr;
         _isValid = false;
 
@@ -538,16 +545,16 @@ namespace se {
 
     void ScriptEngine::onSurfaceDestroy()
     {
-        if(v8::Isolate::GetCurrent() != NULL) {
-            CCLOG("exit isolate %p", _isolate);
-            v8::Locker locker(_isolate);
-            v8::HandleScope hs(_isolate);
-            if(_isolate->InContext()) {
-                _context.Get(_isolate)->Exit();
-            }
-            _isolate->Exit();
-            CCLOG("isolate %p is now %s in use", _isolate, _isolate->IsInUse() ? "" : "not");
-        }
+//        if(v8::Isolate::GetCurrent() != NULL) {
+//            CCLOG("exit isolate %p", _isolate);
+//            v8::Locker locker(_isolate);
+//            v8::HandleScope hs(_isolate);
+//            if(_isolate->InContext()) {
+//                _context.Get(_isolate)->Exit();
+//            }
+//            _isolate->Exit();
+//            CCLOG("isolate %p is now %s in use", _isolate, _isolate->IsInUse() ? "" : "not");
+//        }
     }
 
     Object* ScriptEngine::getGlobalObject() const
@@ -626,6 +633,16 @@ namespace se {
             _rebindListener = cocos2d::EventListenerCustom::create(EVENT_RENDERER_RECREATED, [this](cocos2d::EventCustom* event){
                 if(_isolate && _isolate->IsDead()) {
                     SE_LOGD("cur isolate is dead.");
+                }
+                if(v8::Isolate::GetCurrent() != NULL) {
+                    CCLOG("exit isolate %p", _isolate);
+                    v8::Locker locker(_isolate);
+                    v8::HandleScope hs(_isolate);
+                    if(_isolate->InContext()) {
+                        _context.Get(_isolate)->Exit();
+                    }
+                    _isolate->Exit();
+                    CCLOG("isolate %p is now %s in use", _isolate, _isolate->IsInUse() ? "" : "not");
                 }
                 if(_isolate && !v8::Isolate::GetCurrent()) {
                     v8::Locker locker(_isolate);
