@@ -1,3 +1,4 @@
+
 /****************************************************************************
 Copyright (c) 2008-2010 Ricardo Quesada
 Copyright (c) 2010-2013 cocos2d-x.org
@@ -1123,7 +1124,7 @@ void Director::purgeDirector()
 void Director::restartDirector()
 {
     reset();
-
+    
     // Texture cache need to be reinitialized
     initTextureCache();
 

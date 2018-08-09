@@ -14,6 +14,7 @@ using namespace cocos2d;
 
 static bool js_cocos2dx_dragonbones_Armature_getAnimation(se::State& s)
 {
+
     if (s.args().size() == 0)
     {
         dragonBones::Armature* cobj = (dragonBones::Armature*)s.nativeThisObject();
@@ -22,7 +23,6 @@ static bool js_cocos2dx_dragonbones_Armature_getAnimation(se::State& s)
         SE_PRECONDITION2(ok, false, "Convert dragonBones::Animation to se::Value failed!");
         return true;
     }
-
     SE_REPORT_ERROR("wrong number of arguments: %d, was expecting %d", (int)s.args().size(), 0);
     return false;
 }

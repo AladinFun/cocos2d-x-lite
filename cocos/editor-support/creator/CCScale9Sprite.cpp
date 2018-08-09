@@ -930,7 +930,6 @@ bool Scale9SpriteV2::setSpriteFrame(cocos2d::SpriteFrame* spriteFrame)
     
     if(!spriteFrame)
     {
-        this->setContentSize(cocos2d::Size::ZERO);
          return true;
     }
 

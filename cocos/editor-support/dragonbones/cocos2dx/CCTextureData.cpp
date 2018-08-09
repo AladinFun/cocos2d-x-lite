@@ -9,6 +9,7 @@ CCTextureData::CCTextureData() :
 }
 CCTextureData::~CCTextureData()
 {
+    if (*_isInCleanUp)return;
     _onClear();
 }
 

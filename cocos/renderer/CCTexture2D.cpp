@@ -53,6 +53,7 @@ THE SOFTWARE.
 #endif
 
 #include <unordered_set>
+#include <set>
 
 NS_CC_BEGIN
 
@@ -432,6 +433,9 @@ void Texture2D::convertRGBA8888ToRGB5A1(const unsigned char* data, ssize_t dataL
 // converter function end
 //////////////////////////////////////////////////////////////////////////
 
+//static int glcount = 0;
+//std::set<Texture2D*> cacheList;
+
 Texture2D::Texture2D()
 : _pixelFormat(Texture2D::PixelFormat::DEFAULT)
 , _pixelsWide(0)
@@ -447,7 +451,9 @@ Texture2D::Texture2D()
 , _valid(true)
 , _alphaTexture(nullptr)
 {
+    //glcount = glcount + 1;
     _antialiasEnabled = Director::getInstance()->getOpenGLView()->isAntiAliasEnabled();
+    //cacheList.insert(this);
 }
 
 Texture2D::~Texture2D()
@@ -456,7 +462,9 @@ Texture2D::~Texture2D()
     VolatileTextureMgr::removeTexture(this);
 #endif
 
-    CCLOGINFO("deallocing Texture2D: %p - id=%u", this, _name);
+    //glcount = glcount - 1;
+    //cacheList.insert(this);
+    CCLOGERROR("deallocing Texture2D: %p - id=%u", this, _name);
     CC_SAFE_RELEASE(_shaderProgram);
 
     CC_SAFE_DELETE(_ninePatchInfo);

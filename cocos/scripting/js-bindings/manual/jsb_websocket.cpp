@@ -55,10 +55,11 @@ private:
 public:
     virtual void onOpen(WebSocket* ws) override
     {
+#if CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
         if(!se::ScriptEngine::getInstance()->isRunning()) {
             return;
         }
-
+#endif
         se::ScriptEngine::getInstance()->clearException();
         se::AutoHandleScope hs;
 
@@ -94,9 +95,12 @@ public:
 
     virtual void onMessage(WebSocket* ws, const WebSocket::Data& data) override
     {
+#if CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
         if(!se::ScriptEngine::getInstance()->isRunning()) {
             return;
         }
+#endif
+		
         se::ScriptEngine::getInstance()->clearException();
         se::AutoHandleScope hs;
 
@@ -159,9 +163,12 @@ public:
 
     virtual void onClose(WebSocket* ws) override
     {
+#if CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
         if(!se::ScriptEngine::getInstance()->isRunning()) {
             return;
         }
+#endif
+		
         se::ScriptEngine::getInstance()->clearException();
         se::AutoHandleScope hs;
 
@@ -209,9 +216,12 @@ public:
 
     virtual void onError(WebSocket* ws, const WebSocket::ErrorCode& error) override
     {
+#if CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
         if(!se::ScriptEngine::getInstance()->isRunning()) {
             return;
         }
+#endif
+		
         se::ScriptEngine::getInstance()->clearException();
         se::AutoHandleScope hs;
 

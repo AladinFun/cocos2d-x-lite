@@ -344,6 +344,7 @@ namespace se {
         __oldConsoleAssert.setUndefined();
 
         JSGlobalContextRelease(_cx);
+		JSGlobalContextRelease(_cx);
 
         _cx = nullptr;
         _globalObj = nullptr;
