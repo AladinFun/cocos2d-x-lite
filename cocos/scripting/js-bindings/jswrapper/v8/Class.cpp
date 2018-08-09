@@ -106,6 +106,7 @@ namespace se {
         }
 
         se::ScriptEngine::getInstance()->addAfterCleanupHook([](){
+            CCLOGERROR("addAfterCleanupHook class");
             for (auto cls : __allClasses)
             {
                 delete cls;

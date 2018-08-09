@@ -81,7 +81,7 @@ extern "C"
 JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *reserved)
 {
     JniHelper::setJavaVM(vm);
-    CCLOG("cocos JNI_Onload");
+    CCLOG("xxxxxxx native.JNI_Onload");
     cocos_android_app_init(JniHelper::getEnv());
 
     return JNI_VERSION_1_4;
@@ -89,7 +89,7 @@ JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *reserved)
 
 JNIEXPORT void Java_org_cocos2dx_lib_Cocos2dxRenderer_nativeInit(JNIEnv*  env, jobject thiz, jint w, jint h)
 {
-    CCLOG("Java_org_cocos2dx_lib_Cocos2dxRenderer_nativeInit");
+    CCLOG("xxxxxxx native.Java_org_cocos2dx_lib_Cocos2dxRenderer_nativeInit");
     if(!cocos2d::Application::getInstance()) {
         cocos_android_app_init(env);
     }
@@ -122,7 +122,7 @@ JNIEXPORT void Java_org_cocos2dx_lib_Cocos2dxRenderer_nativeInit(JNIEnv*  env, j
 
 JNIEXPORT void Java_org_cocos2dx_lib_Cocos2dxRenderer_nativeOnSurfaceDestroy(JNIEnv*  env, jobject thiz)
 {
-    CCLOG("Java_org_cocos2dx_lib_Cocos2dxRenderer_nativeOnSurfaceDestroy");
+    CCLOG("xxxxxxx native.Java_org_cocos2dx_lib_Cocos2dxRenderer_nativeOnSurfaceDestroy");
     jsb_on_surface_destroy();
 }
 
@@ -147,14 +147,14 @@ JNIEXPORT jintArray Java_org_cocos2dx_lib_Cocos2dxActivity_getGLContextAttrs(JNI
 
 JNIEXPORT jintArray Java_org_cocos2dx_lib_Cocos2dxActivity_startRuntime(JNIEnv*  env, jobject thiz, jstring data)
 {
-    CCLOG("start runtime");
+    CCLOG("xxxxxxx native.start runtime");
     cocos2d::Application::isRunning = true;
     std::string dataStr = JniHelper::jstring2string(data);
     std::string startScript = "window.startGame(" + dataStr + ");";
 
-    CCLOG("run script: main.js");
+    CCLOG("xxxxxxx native.run script: main.js");
     jsb_run_script("main.js");
-    CCLOG("run script: %s", startScript.c_str());
+    CCLOG("xxxxxxx native.run script: %s", startScript.c_str());
     jsb_run_script_string(startScript.c_str());
 }
 

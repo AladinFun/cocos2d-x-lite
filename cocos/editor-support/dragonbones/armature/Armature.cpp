@@ -14,6 +14,7 @@ Armature::Armature() :
 }
 Armature::~Armature()
 {
+    if (*_isInCleanUp) return;
     _onClear();
 }
 

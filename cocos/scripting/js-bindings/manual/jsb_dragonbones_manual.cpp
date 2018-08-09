@@ -470,67 +470,9 @@ bool register_all_dragonbones_manual(se::Object* obj)
     });
 
     se::ScriptEngine::getInstance()->addAfterCleanupHook([](){
-
-        // Destroy CCFactory singlton.
-        dragonBones::CCFactory::destroyInstance();
-
-        // World clock is a static variable and needs to be cleared and reset.
-        dragonBones::WorldClock::clock.clear();
-        dragonBones::WorldClock::clock.time = 0.0f;
-        dragonBones::WorldClock::clock.timeScale = 1.0f;
-        
+        CCLOGERROR("addAfterCleanupHook dragon ", dragonBones::BaseObject::getAllObjects().size());
         dragonBones::BaseObject::destroyAllObjects();
-/*
-        // Copy the dragonbones object vector since vector element will be deleted in BaseObject destructor.
-        std::vector<dragonBones::BaseObject*> allDragonBonesObjects = dragonBones::BaseObject::getAllObjects();
-        SE_LOGD("Starting to cleanup dragonbones object, count: %d\n", (int)allDragonBonesObjects.size());
-        // Clear dragonBones::Armature objects those are not in the pool because
-        // dragonBones::Armature controls life cycle for lots of other objects,
-        // so it needs to be disposed first.
-        std::vector<dragonBones::BaseObject*>& allObject = dragonBones::BaseObject::getAllObjects();
-        for (auto dbObj : allDragonBonesObjects)
-        {
-            if (dynamic_cast<dragonBones::Armature*>(dbObj) != nullptr && !dbObj->isInPool() && std::find(allObject.begin(), allObject.end(), dbObj) != allObject.end())
-            {
-//                SE_LOGD("1. Force delete not in pool DragonBones Armature object: %s, %p\n", typeid(*dbObj).name(), dbObj);
-                delete dbObj;
-            }
-        }
-
-        // After disposing dragonBones::Armature objects, there will be lots of other kinds of objects returned to pool.
-        // Therefore, we clean object pool here.
-        dragonBones::BaseObject::clearPool(0);
-
-        // Copy the dragonbones object vector again.
-        allDragonBonesObjects = dragonBones::BaseObject::getAllObjects();
-        SE_LOGD("After first cleanup, dragonbones object remained count: %d\n", (int)allDragonBonesObjects.size());
-        // Check again whether there are some objects still in pool since the releationship of dragonbones objects is really complex.
-        for (auto dbObj : allDragonBonesObjects)
-        {
-            if (!dbObj->isInPool() && std::find(allObject.begin(), allObject.end(), dbObj) != allObject.end())
-            {
-//                SE_LOGD("2. Force delete not in pool DragonBones object: %s, %p\n", typeid(*dbObj).name(), dbObj);
-                delete dbObj;
-            }
-        }
-
-        // Clear pool again.
-        dragonBones::BaseObject::clearPool(0);
-
-        // Don't need to use copy operator since we only print leak object below.
-        auto& refAllDragonBonesObjects = dragonBones::BaseObject::getAllObjects();
-        SE_LOGD("After second cleanup, dragonbones object remained count: %d\n", (int)refAllDragonBonesObjects.size());
-
-        // Print leak objects
-        for (auto dbObj : refAllDragonBonesObjects)
-        {
-            SE_LOGD("Leak dragonbones object: %s, %p\n", typeid(*dbObj).name(), dbObj);
-        }
-
-        // If there're leak objects, clear vector should be done for restarting game.
-        refAllDragonBonesObjects.clear();
-*/
-        CCLOG("after destory all dragonbone objects!!!");
+        dragonBones::CCFactory::destroyInstance();
     });
 
     se::ScriptEngine::getInstance()->clearException();

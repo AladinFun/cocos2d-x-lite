@@ -23,6 +23,7 @@ EventObject::EventObject()
 
 EventObject::~EventObject()
 {
+    if (*_isInCleanUp) return;
     _onClear();
 }
 

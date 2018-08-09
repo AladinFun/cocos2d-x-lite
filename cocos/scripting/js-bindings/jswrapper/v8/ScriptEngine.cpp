@@ -127,7 +127,7 @@ namespace se {
             if ((argc - msgIndex) == 1)
             {
                 std::string msg = args[msgIndex].toStringForce();
-                SE_LOGD("JS: %s%s\n", prefix, msg.c_str());
+                SE_LOGD("JS: xxxx %s%s\n", prefix, msg.c_str());
             }
             else if (argc > 1)
             {
@@ -146,7 +146,7 @@ namespace se {
                     }
                 }
 
-                SE_LOGD("JS: %s%s\n", prefix, msg.c_str());
+                SE_LOGD("JS: xxxx %s%s\n", prefix, msg.c_str());
             }
 
             return true;

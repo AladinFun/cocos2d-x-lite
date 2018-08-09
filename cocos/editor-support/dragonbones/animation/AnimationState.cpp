@@ -16,6 +16,7 @@ AnimationState::AnimationState() :
 }
 AnimationState::~AnimationState() 
 {
+    if (*_isInCleanUp) return;
     _onClear();
 }
 

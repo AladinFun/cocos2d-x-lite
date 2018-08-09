@@ -424,7 +424,7 @@ public abstract class Cocos2dxActivity extends AppCompatActivity implements Coco
     }
 
     public Cocos2dxGLSurfaceView onCreateView() {
-        Cocos2dxGLSurfaceView glSurfaceView = new Cocos2dxGLSurfaceView(this);
+        Cocos2dxGLSurfaceView glSurfaceView = new Cocos2dxGLSurfaceView(this, mFrameLayout);
         //this line is need on some device if we specify an alpha bits
         if(this.mGLContextAttrs[3] > 0) glSurfaceView.getHolder().setFormat(PixelFormat.TRANSLUCENT);
 

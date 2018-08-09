@@ -4562,12 +4562,14 @@ extern se::Object* __jsb_cocos2d_Node_proto;
 
 static bool js_dragonBones_CCArmatureDisplay_finalize(se::State& s)
 {
+    /*
     CCLOGINFO("jsbindings: finalizing JS object %p (dragonBones::CCArmatureDisplay)", s.nativeThisObject());
     dragonBones::CCArmatureDisplay* cobj = (dragonBones::CCArmatureDisplay*)s.nativeThisObject();
     if (cobj->getReferenceCount() == 1)
         cobj->autorelease();
     else
         cobj->release();
+    */
     return true;
 }
 SE_BIND_FINALIZE_FUNC(js_dragonBones_CCArmatureDisplay_finalize)
@@ -4623,12 +4625,14 @@ extern se::Object* __jsb_cocos2d_Sprite_proto;
 
 static bool js_dragonBones_DBCCSprite_finalize(se::State& s)
 {
+    /*
     CCLOGINFO("jsbindings: finalizing JS object %p (dragonBones::DBCCSprite)", s.nativeThisObject());
     dragonBones::DBCCSprite* cobj = (dragonBones::DBCCSprite*)s.nativeThisObject();
     if (cobj->getReferenceCount() == 1)
         cobj->autorelease();
     else
         cobj->release();
+    */
     return true;
 }
 SE_BIND_FINALIZE_FUNC(js_dragonBones_DBCCSprite_finalize)
@@ -4907,7 +4911,7 @@ static bool js_dragonBones_CCFactory_finalize(se::State& s)
     {
         se::NonRefNativePtrCreatedByCtorMap::erase(iter);
         dragonBones::CCFactory* cobj = (dragonBones::CCFactory*)s.nativeThisObject();
-        delete cobj;
+        //delete cobj;
     }
     return true;
 }

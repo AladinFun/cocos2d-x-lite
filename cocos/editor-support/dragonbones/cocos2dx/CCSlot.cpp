@@ -10,11 +10,16 @@ CCSlot::CCSlot()
 }
 CCSlot::~CCSlot() 
 {
+
     _onClear();
 }
 
 void CCSlot::_onClear()
 {
+    if(*_isInCleanUp) {
+        return;
+    }
+
     Slot::_onClear();
 
     _renderDisplay = nullptr;

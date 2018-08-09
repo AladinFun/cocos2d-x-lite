@@ -249,6 +249,7 @@ void AudioMixerController::mixOneFrame()
             if (track->isInitialized())
             {
                 _mixer->deleteTrackName(track->getName());
+                track->setInitialized(false);
             }
             else
             {
@@ -266,9 +267,13 @@ void AudioMixerController::mixOneFrame()
             else
             {
                 ALOGV("Play over ...");
-                _mixer->deleteTrackName(track->getName());
+                if (track->isInitialized()) {
+                    _mixer->deleteTrackName(track->getName());
+                    track->setInitialized(false);
+                }
+
                 tracksToRemove.push_back(track);
-                track->setState(Track::State::OVER);
+                //track->setState(Track::State::OVER);
             }
         }
     }

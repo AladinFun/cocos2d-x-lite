@@ -8,6 +8,7 @@ DragonBonesData::DragonBonesData()
 }
 DragonBonesData::~DragonBonesData()
 {
+    if (*_isInCleanUp) return;
     _onClear();
 }
 

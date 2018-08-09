@@ -8,6 +8,7 @@ ActionData::ActionData()
 }
 ActionData::~ActionData()
 {
+    if (*_isInCleanUp) return;
     _onClear();
 }
 
@@ -28,6 +29,7 @@ EventData::EventData()
 }
 EventData::~EventData()
 {
+    if (*_isInCleanUp) return;
     _onClear();
 }
 
@@ -46,6 +48,7 @@ AnimationFrameData::AnimationFrameData()
 }
 AnimationFrameData::~AnimationFrameData()
 {
+    if (*_isInCleanUp) return;
     _onClear();
 }
 
@@ -60,6 +63,7 @@ BoneFrameData::BoneFrameData()
 }
 BoneFrameData::~BoneFrameData()
 {
+    if (*_isInCleanUp) return;
     _onClear();
 }
 
@@ -86,6 +90,7 @@ SlotFrameData::SlotFrameData() :
 }
 SlotFrameData::~SlotFrameData()
 {
+    if (*_isInCleanUp) return;
     _onClear();
 }
 
@@ -113,6 +118,7 @@ ExtensionFrameData::ExtensionFrameData()
 }
 ExtensionFrameData::~ExtensionFrameData()
 {
+    if (*_isInCleanUp) return;
     _onClear();
 }
 

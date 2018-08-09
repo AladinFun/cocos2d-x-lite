@@ -883,6 +883,7 @@ bool jsb_register_global_variables(se::Object* global)
     se::ScriptEngine::getInstance()->clearException();
 
     se::ScriptEngine::getInstance()->addAfterCleanupHook([](){
+        CCLOGERROR("addAfterCleanupHook Global");
         __ccObj->decRef();
         __jsbObj->decRef();
         __jscObj->decRef();

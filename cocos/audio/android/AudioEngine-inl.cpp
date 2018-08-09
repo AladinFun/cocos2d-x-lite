@@ -245,7 +245,6 @@ void AudioEngineImpl::setAudioFocusForAllPlayers(bool isFocus)
 
 int AudioEngineImpl::play2d(const std::string &filePath ,bool loop ,float volume)
 {
-    ALOGV("play2d, _audioPlayers.size=%d", (int)_audioPlayers.size());
     auto audioId = AudioEngine::INVALID_AUDIO_ID;
 
     do 
@@ -262,8 +261,11 @@ int AudioEngineImpl::play2d(const std::string &filePath ,bool loop ,float volume
         {
             player->setId(audioId);
             _audioPlayers.insert(std::make_pair(audioId, player));
+            ALOGV("play2d, _audioPlayers.size=%d", (int)_audioPlayers.size());
 
             player->setPlayEventCallback([this, player, filePath](IAudioPlayer::State state){
+                if (player == nullptr || this == nullptr)
+                    return;
 
                 if (state != IAudioPlayer::State::OVER && state != IAudioPlayer::State::STOPPED)
                 {
@@ -276,10 +278,20 @@ int AudioEngineImpl::play2d(const std::string &filePath ,bool loop ,float volume
                 ALOGV("Removing player id=%d, state:%d", id, (int)state);
 
                 AudioEngine::remove(id);
+                for (auto& idp : _audioPlayers)
+                {
+                    if (idp.second == player || idp.first == id)
+                    {
+                        id = idp.first;
+                    }
+                }
+
                 if (_audioPlayers.find(id) != _audioPlayers.end())
                 {
                     _audioPlayers.erase(id);
                 }
+                ALOGV("play2d, _audioPlayers.size=%d", (int)_audioPlayers.size());
+
                 if (_urlAudioPlayersNeedResume.find(id) != _urlAudioPlayersNeedResume.end())
                 {
                     _urlAudioPlayersNeedResume.erase(id);
@@ -382,7 +394,8 @@ void AudioEngineImpl::stopAll()
         players.push_back(e.second);
     }
 
-    for (auto p : players)
+    _audioPlayers.clear();
+    for (auto& p : players)
     {
         p->stop();
     }

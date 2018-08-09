@@ -25,6 +25,9 @@ package org.cocos2dx.lib;
 
 import android.opengl.GLSurfaceView;
 import android.util.Log;
+import android.view.View;
+import android.view.ViewGroup;
+import android.view.ViewParent;
 
 import java.lang.ref.WeakReference;
 
@@ -49,7 +52,7 @@ public class Cocos2dxRenderer implements GLSurfaceView.Renderer {
     private long mLastTickInNanoSeconds;
     private int mScreenWidth;
     private int mScreenHeight;
-    private boolean mNativeInitCompleted = false;
+    public boolean mNativeInitCompleted = false;
     private WeakReference<Cocos2dxGLSurfaceView> owner = null;
 
     public Cocos2dxRenderer(Cocos2dxGLSurfaceView owner) {
@@ -80,7 +83,7 @@ public class Cocos2dxRenderer implements GLSurfaceView.Renderer {
 
     @Override
     public void onSurfaceCreated(final GL10 GL10, final EGLConfig EGLConfig) {
-        Log.d(TAG, "onSurfaceCreated");
+        Log.d(TAG, "xxxxxxx render.onSurfaceCreated");
         Cocos2dxRenderer.nativeInit(this.mScreenWidth, this.mScreenHeight);
         this.mLastTickInNanoSeconds = System.nanoTime();
         mNativeInitCompleted = true;
@@ -92,7 +95,13 @@ public class Cocos2dxRenderer implements GLSurfaceView.Renderer {
 
     @Override
     public void onSurfaceChanged(final GL10 GL10, final int width, final int height) {
-        Log.d(TAG, "onSurfaceChanged");
+        Log.d(TAG, "xxxxxxx render.onSurfaceChanged");
+
+        if(!mNativeInitCompleted && owner != null && owner.get() != null) {
+            owner.get().onRebuild();
+            return;
+        }
+
         Cocos2dxRenderer.nativeOnSurfaceChanged(width, height);
     }
 
@@ -155,6 +164,9 @@ public class Cocos2dxRenderer implements GLSurfaceView.Renderer {
     }
 
     public void handleKeyDown(final int keyCode) {
+        if (! mNativeInitCompleted)
+            return;
+
         Cocos2dxRenderer.nativeKeyEvent(keyCode, true);
     }
 
@@ -163,7 +175,7 @@ public class Cocos2dxRenderer implements GLSurfaceView.Renderer {
     }
 
     public void handleOnPause() {
-        Log.d(TAG, "handleOnPause");
+        Log.d(TAG, "xxxxxxx render.handleOnPause");
         /**
          * onPause may be invoked before onSurfaceCreated,
          * and engine will be initialized correctly after
@@ -178,7 +190,11 @@ public class Cocos2dxRenderer implements GLSurfaceView.Renderer {
     }
 
     public void handleOnResume() {
-        Log.d(TAG, "handleOnResume");
+        Log.d(TAG, "xxxxxxx render.handleOnResume");
+
+        if (! mNativeInitCompleted)
+            return;
+
         Cocos2dxHelper.onEnterForeground();
         Cocos2dxRenderer.nativeOnResume();
     }

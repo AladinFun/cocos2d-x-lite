@@ -35,8 +35,10 @@ import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -61,7 +63,7 @@ public class Cocos2dxGLSurfaceView extends GLSurfaceView {
     private static Cocos2dxGLSurfaceView mCocos2dxGLSurfaceView;
     private static Cocos2dxTextInputWrapper sCocos2dxTextInputwrapper;
 
-    private Cocos2dxRenderer mCocos2dxRenderer;
+    public Cocos2dxRenderer mCocos2dxRenderer;
     private Cocos2dxEditBox mCocos2dxEditText;
 
     public boolean isSoftKeyboardShown() {
@@ -72,17 +74,28 @@ public class Cocos2dxGLSurfaceView extends GLSurfaceView {
         this.mSoftKeyboardShown = softKeyboardShown;
     }
 
+    private boolean mWaiteBuild = false;
     private boolean mSoftKeyboardShown = false;
+    private WeakReference<ViewGroup> mContainer = null;
+    private WeakReference<Handler> mRebuildHandle = null;
 
 
     // ===========================================================
     // Constructors
     // ===========================================================
 
-    public Cocos2dxGLSurfaceView(final Context context) {
+    public Cocos2dxGLSurfaceView(final Context context, ViewGroup container) {
         super(context);
-
+        this.mContainer = new WeakReference<>(container);
         this.initView();
+    }
+
+    public ViewGroup getContainer() {
+        return this.mContainer != null ? this.mContainer.get() : null;
+    }
+
+    public void setRebuildHandle(Handler delay) {
+        mRebuildHandle = new WeakReference<>(delay);
     }
 
     public Cocos2dxGLSurfaceView(final Context context, final AttributeSet attrs) {
@@ -155,6 +168,10 @@ public class Cocos2dxGLSurfaceView extends GLSurfaceView {
         this.setRenderer(this.mCocos2dxRenderer);
     }
 
+    public Cocos2dxRenderer getCocos2dxRenderer() {
+         return this.mCocos2dxRenderer;
+    }
+
     private String getContentText() {
         return this.mCocos2dxRenderer.getContentText();
     }
@@ -171,13 +188,44 @@ public class Cocos2dxGLSurfaceView extends GLSurfaceView {
         }
     }
 
+    public void onRebuild() {
+        getHandler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                if (!mWaiteBuild || Cocos2dxGLSurfaceView.this.mCocos2dxRenderer.mNativeInitCompleted)
+                    return;
+
+                mWaiteBuild = false;
+                Cocos2dxGLSurfaceView.this.setVisibility(View.GONE);
+                Cocos2dxGLSurfaceView.this.mContainer.get().removeView(Cocos2dxGLSurfaceView.mCocos2dxGLSurfaceView);
+
+                mRebuildHandle.get().postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        Cocos2dxGLSurfaceView.this.setFocusableInTouchMode(true);
+                        Cocos2dxGLSurfaceView.this.setZOrderMediaOverlay(true);
+                        Cocos2dxGLSurfaceView.this.setVisibility(View.VISIBLE);
+                        Cocos2dxGLSurfaceView.this.mContainer.get().addView(Cocos2dxGLSurfaceView.mCocos2dxGLSurfaceView);
+                    }
+                }, 200);
+            }
+        }, 2000);
+    }
+
     // ===========================================================
     // Methods for/from SuperClass/Interfaces
     // ===========================================================
 
     @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        setMeasuredDimension(widthMeasureSpec, heightMeasureSpec);
+        Log.e(TAG, "xxxxxxx onMeasure" + widthMeasureSpec + ":" + heightMeasureSpec);
+
+    }
+
+    @Override
     public void onResume() {
-        Log.d(TAG, "onResume");
+        Log.d(TAG, "xxxxxxx onResume");
         super.onResume();
         this.setRenderMode(RENDERMODE_CONTINUOUSLY);
         this.queueEvent(new Runnable() {
@@ -186,11 +234,12 @@ public class Cocos2dxGLSurfaceView extends GLSurfaceView {
                 Cocos2dxGLSurfaceView.this.mCocos2dxRenderer.handleOnResume();
             }
         });
+
     }
 
     @Override
     public void onPause() {
-        Log.d(TAG, "onPause");
+        Log.d(TAG, "xxxxxxx onPause");
         this.queueEvent(new Runnable() {
             @Override
             public void run() {
@@ -198,8 +247,9 @@ public class Cocos2dxGLSurfaceView extends GLSurfaceView {
             }
         });
         this.setRenderMode(RENDERMODE_WHEN_DIRTY);
-        //super.onPause();
+//        super.onPause();
     }
+
     @Override
     public boolean dispatchTouchEvent(MotionEvent ev) {
         if(!this.isEnabled()) {
@@ -209,9 +259,22 @@ public class Cocos2dxGLSurfaceView extends GLSurfaceView {
     }
 
     @Override
+    public void surfaceCreated(SurfaceHolder holder)
+    {
+        mWaiteBuild = true;
+        Log.d(TAG, "xxxxxxx surfaceCreated super start");
+        super.surfaceCreated(holder);
+        Log.d(TAG, "xxxxxxx surfaceCreated super end");
+        //this.onRebuild();
+    }
+
+    @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
+        mWaiteBuild = false;
         // Surface will be destroyed when we return
+        Log.d(TAG, "xxxxxxx surfaceDestroyed");
         Cocos2dxRenderer.nativeOnSurfaceDestroy();
+        Cocos2dxGLSurfaceView.this.mCocos2dxRenderer.mNativeInitCompleted = false;
         super.surfaceDestroyed(holder);
     }
 
@@ -223,6 +286,9 @@ public class Cocos2dxGLSurfaceView extends GLSurfaceView {
         super.queueEvent(new Runnable() {
             @Override
             public void run() {
+                if (!(Cocos2dxGLSurfaceView.this.mCocos2dxRenderer.mNativeInitCompleted))
+                        return;
+
                 if(queuedRunnable.indexOf(r) != -1) {
                     queuedRunnable.remove(r);
                     r.run();
@@ -354,6 +420,7 @@ public class Cocos2dxGLSurfaceView extends GLSurfaceView {
     @Override
     protected void onSizeChanged(final int pNewSurfaceWidth, final int pNewSurfaceHeight, final int pOldSurfaceWidth, final int pOldSurfaceHeight) {
         if(!this.isInEditMode()) {
+            Log.e(TAG, "onSizeChanged: " + pNewSurfaceWidth + " : " + pNewSurfaceHeight);
             this.mCocos2dxRenderer.setScreenWidthAndHeight(pNewSurfaceWidth, pNewSurfaceHeight);
         }
     }

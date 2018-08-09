@@ -2,8 +2,14 @@
 #include "CCTextureData.h"
 #include "CCArmatureDisplay.h"
 #include "CCSlot.h"
+#include <set>
+#include <thread>
 
 DRAGONBONES_NAMESPACE_BEGIN
+
+static std::vector<cocos2d::SpriteFrame*>* __rawTexture = new std::vector<cocos2d::SpriteFrame*>;
+static std::vector<DBCCSprite*>* __rawDisplay = new std::vector<DBCCSprite*>;
+static std::vector<CCArmatureDisplay*>* __armatureDisplay = new std::vector<CCArmatureDisplay*>;
 
 namespace {
     CCFactory* __instance = nullptr;
@@ -12,15 +18,41 @@ namespace {
 CCFactory* CCFactory::getInstance()
 {
     if (__instance == nullptr)
+    {
         __instance = new (std::nothrow) CCFactory();
+    }
 
     return __instance;
 }
 
 void CCFactory::destroyInstance()
 {
-    delete __instance;
+    auto old_release = __instance;
+    auto old_event = static_cast<CCArmatureDisplay*>(EventObject::_soundEventManager);
+    
+    auto __rawTexture_t = __rawTexture;
+    auto __rawDisplay_t = __rawDisplay;
+    auto __armatureDisplay_t = __armatureDisplay;
+    std::thread* _thread_t = nullptr;
+    _thread_t = new std::thread([=](){
+        if(old_event)old_event->release();
+        if(old_release) delete old_release;
+        
+        for (auto&p: (*__rawTexture_t))
+            p->release();
+        for (auto&p: (*__rawDisplay_t))
+            p->release();
+        for (auto&p: (*__armatureDisplay_t))
+            p->release();
+        
+        delete _thread_t;
+    });;
+    
     __instance = nullptr;
+    __rawTexture = new std::vector<cocos2d::SpriteFrame*>;
+    __rawDisplay = new std::vector<DBCCSprite*>;
+    __armatureDisplay = new std::vector<CCArmatureDisplay*>;
+    EventObject::_soundEventManager = nullptr;
 }
 
 CCFactory::CCFactory() 
@@ -63,6 +95,7 @@ Armature * CCFactory::_generateArmature(const BuildArmaturePackage & dataPackage
     armature->_display = armatureDisplay;
 
     armatureDisplay->retain();
+    (*__armatureDisplay).push_back(armatureDisplay);
     armatureDisplay->setCascadeOpacityEnabled(true);
     armatureDisplay->setCascadeColorEnabled(true);
     armatureDisplay->_armature = armature;
@@ -86,10 +119,11 @@ Slot * CCFactory::_generateSlot(const BuildArmaturePackage& dataPackage, const S
 
     displayList.reserve(slotDisplayDataSet.displays.size());
     rawDisplay->retain();
+    (*__rawDisplay).push_back(rawDisplay);
     rawDisplay->setCascadeOpacityEnabled(true);
     rawDisplay->setCascadeColorEnabled(true);
     rawDisplay->setAnchorPoint(cocos2d::Vec2::ZERO);
-
+    
     for (const auto displayData : slotDisplayDataSet.displays)
     {
         switch (displayData->type)
@@ -264,6 +298,7 @@ cocos2d::Sprite* CCFactory::getTextureDisplay(const std::string& textureName, co
             cocos2d::Size originSize(textureData->region.width, textureData->region.height);
             textureData->texture = cocos2d::SpriteFrame::createWithTexture(textureAtlasTexture, rect, textureData->rotated, offset, originSize); // TODO multiply textureAtlas
             textureData->texture->retain();
+            (*__rawTexture).push_back(textureData->texture);
         }
 
         return cocos2d::Sprite::createWithSpriteFrame(textureData->texture);

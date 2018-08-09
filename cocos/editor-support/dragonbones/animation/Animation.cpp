@@ -12,6 +12,7 @@ bool Animation::_sortAnimationState(AnimationState* a, AnimationState* b)
 
 Animation::Animation() 
 {
+    if (*_isInCleanUp) return;
     _onClear();
 }
 Animation::~Animation() 

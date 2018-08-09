@@ -114,8 +114,6 @@ bool jsb_register_all_modules()
     se->addBeforeCleanupHook([se](){
         se->garbageCollect();
         PoolManager::getInstance()->getCurrentPool()->clear();
-        se->garbageCollect();
-        PoolManager::getInstance()->getCurrentPool()->clear();
     });
 
     se->addRegisterCallback(jsb_register_global_variables);

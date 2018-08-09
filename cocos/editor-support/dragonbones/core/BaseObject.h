@@ -23,10 +23,13 @@ public:
     static void destroyAllObjects();
     typedef std::function<void(BaseObject*,int)> RecycleOrDestroyCallback;
 private:
+    
     static std::size_t _hashCode;
     static std::size_t _defaultMaxCount;
-    static std::unordered_map<std::size_t, std::size_t> _maxCountMap;
-    static std::unordered_map<std::size_t, std::vector<BaseObject*>> _poolsMap;
+    static bool* _InCleanUp;
+    static std::unordered_map<std::size_t, std::vector<BaseObject*>>* _poolsMap;
+    static std::unordered_map<std::size_t, std::size_t>* _maxCountMap;
+    static std::vector<dragonBones::BaseObject*>* __allDragonBonesObjects;
 
     static RecycleOrDestroyCallback _recycleOrDestroyCallback;
     static void _returnObject(BaseObject *object);
@@ -40,8 +43,8 @@ public:
     static T* borrowObject() 
     {
         const auto classTypeIndex = T::getTypeIndex();
-        const auto iterator = _poolsMap.find(classTypeIndex);
-        if (iterator != _poolsMap.end())
+        const auto iterator = _poolsMap->find(classTypeIndex);
+        if (iterator != _poolsMap->end())
         {
             auto& pool = iterator->second;
             if (!pool.empty())
@@ -76,9 +79,13 @@ public:
     
     void returnToPool();
     inline bool isInPool() const { return _isInPool; }
+
 private:
-    static std::vector<dragonBones::BaseObject*> __allDragonBonesObjects;
+
     bool _isInPool;
+
+public:
+    bool* _isInCleanUp;
 };
 
 DRAGONBONES_NAMESPACE_END

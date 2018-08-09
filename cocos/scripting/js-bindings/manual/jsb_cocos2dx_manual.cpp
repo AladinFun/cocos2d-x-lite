@@ -309,6 +309,7 @@ static bool register_sys_localStorage(se::Object* obj)
     localStorageInit(strFilePath);
 
     se::ScriptEngine::getInstance()->addBeforeCleanupHook([](){
+        CCLOGERROR("addBeforeCleanupHook manual");
         localStorageFree();
     });
 
