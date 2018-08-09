@@ -243,8 +243,6 @@ namespace se {
 
         if (nullptr == _cx)
             return false;
-        
-        JSGlobalContextRetain(_cx);
 
         JSStringRef ctxName = JSStringCreateWithUTF8CString("Cocos2d-x JSB");
         JSGlobalContextSetName(_cx, ctxName);
@@ -343,7 +341,6 @@ namespace se {
         __oldConsoleError.setUndefined();
         __oldConsoleAssert.setUndefined();
 
-        JSGlobalContextRelease(_cx);
 		JSGlobalContextRelease(_cx);
 
         _cx = nullptr;
