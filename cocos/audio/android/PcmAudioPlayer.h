@@ -24,6 +24,7 @@ THE SOFTWARE.
 #pragma once
 
 #include <mutex>
+#include <thread>
 #include "audio/android/IAudioPlayer.h"
 #include "audio/android/PcmData.h"
 #include "audio/android/Track.h"
@@ -84,6 +85,7 @@ private:
 
 private:
     int _id;
+    std::thread::id _threadid;
     std::string _url;
     PcmData _decResult;
     Track* _track;

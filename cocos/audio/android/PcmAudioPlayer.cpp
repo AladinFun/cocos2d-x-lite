@@ -91,6 +91,8 @@ bool PcmAudioPlayer::prepare(const std::string &url, const PcmData &decResult)
                 {
                     _playEventCallback(State::STOPPED);
                 }
+
+                this->_track->onStateChanged = [](Track::State state){};
                 delete this;
             }
         };
@@ -183,9 +185,6 @@ void PcmAudioPlayer::resume()
 void PcmAudioPlayer::stop()
 {
     ALOGV("PcmAudioPlayer (%p) stop, url: %s", this, _url.c_str());
-    if (_track->getState() == Track::State::DESTROYED)
-        return;
-
     _track->setState(Track::State::STOPPED);
 }
 

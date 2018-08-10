@@ -33,6 +33,7 @@ void CCFactory::destroyInstance()
     auto __rawTexture_t = __rawTexture;
     auto __rawDisplay_t = __rawDisplay;
     auto __armatureDisplay_t = __armatureDisplay;
+    
     //std::thread* _thread_t = nullptr;
     //_thread_t = new std::thread([=](){
         if(old_event)old_event->release();
@@ -55,6 +56,7 @@ void CCFactory::destroyInstance()
             }
             else
             {
+                if (tex->getReferenceCount() == 1) objs.erase(tex);
                 delete p;
             }
         }
@@ -69,6 +71,7 @@ void CCFactory::destroyInstance()
             }
             else
             {
+                if (tex->getReferenceCount() == 1) objs.erase(tex);
                 delete p;
             }
         }
@@ -150,6 +153,8 @@ Slot * CCFactory::_generateSlot(const BuildArmaturePackage& dataPackage, const S
 
     displayList.reserve(slotDisplayDataSet.displays.size());
     rawDisplay->retain();
+    rawDisplay->retain();
+    
     (*__rawDisplay).push_back(rawDisplay);
     rawDisplay->setCascadeOpacityEnabled(true);
     rawDisplay->setCascadeColorEnabled(true);
@@ -328,6 +333,7 @@ cocos2d::Sprite* CCFactory::getTextureDisplay(const std::string& textureName, co
             cocos2d::Vec2 offset(0.f, 0.f);
             cocos2d::Size originSize(textureData->region.width, textureData->region.height);
             textureData->texture = cocos2d::SpriteFrame::createWithTexture(textureAtlasTexture, rect, textureData->rotated, offset, originSize); // TODO multiply textureAtlas
+            textureData->texture->retain();
             textureData->texture->retain();
             (*__rawTexture).push_back(textureData->texture);
         }

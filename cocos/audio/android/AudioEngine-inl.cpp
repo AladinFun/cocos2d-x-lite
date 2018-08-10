@@ -264,9 +264,6 @@ int AudioEngineImpl::play2d(const std::string &filePath ,bool loop ,float volume
             ALOGV("play2d, _audioPlayers.size=%d", (int)_audioPlayers.size());
 
             player->setPlayEventCallback([this, player, filePath](IAudioPlayer::State state){
-                if (player == nullptr || this == nullptr)
-                    return;
-
                 if (state != IAudioPlayer::State::OVER && state != IAudioPlayer::State::STOPPED)
                 {
                     ALOGV("Ignore state: %d", static_cast<int>(state));
