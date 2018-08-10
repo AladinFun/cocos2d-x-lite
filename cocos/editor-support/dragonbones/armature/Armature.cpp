@@ -215,6 +215,10 @@ void Armature::_bufferEvent(EventObject* value, const std::string& type)
 
 void Armature::dispose()
 {
+    if(*_isInCleanUp) {
+        return;
+    }
+    
     _delayDispose = true;
 
     if (!_lockDispose && _animation)

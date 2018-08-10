@@ -21,9 +21,9 @@ void BaseObject::destroyAllObjects()
     auto __allDragonBonesObjects_t = __allDragonBonesObjects;
     
     _recycleOrDestroyCallback = nullptr;
-    std::thread* _thread_t = nullptr;
+    //std::thread* _thread_t = nullptr;
 
-    _thread_t = new std::thread([=](){
+    //_thread_t = new std::thread([=](){
         *_InCleanUp_t = true;
 
         for (auto dbObj :  (*__allDragonBonesObjects_t)) delete dbObj;
@@ -36,8 +36,8 @@ void BaseObject::destroyAllObjects()
         delete _poolsMap_t;
         delete __allDragonBonesObjects_t;
         
-        delete _thread_t;
-    });
+    //    delete _thread_t;
+    //});
                 
     _hashCode = 0;
     _defaultMaxCount = 5000;

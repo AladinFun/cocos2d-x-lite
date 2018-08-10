@@ -15,13 +15,13 @@ public:
 public:
     /** @private */
     Armature* _armature;
-
+    virtual ~CCArmatureDisplay();
+    
 protected:
     cocos2d::EventDispatcher* _dispatcher;
 
 protected:
     CCArmatureDisplay();
-    virtual ~CCArmatureDisplay();
 
 private:
     DRAGONBONES_DISALLOW_COPY_AND_ASSIGN(CCArmatureDisplay);
@@ -79,6 +79,8 @@ public:
 
 protected:
     DBCCSprite();
+    
+public:
     virtual ~DBCCSprite();
 
 private:

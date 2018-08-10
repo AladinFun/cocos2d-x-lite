@@ -463,7 +463,7 @@ Texture2D::~Texture2D()
 #endif
 
     //glcount = glcount - 1;
-    //cacheList.insert(this);
+    //cacheList.erase(this);
     CCLOGERROR("deallocing Texture2D: %p - id=%u", this, _name);
     CC_SAFE_RELEASE(_shaderProgram);
 

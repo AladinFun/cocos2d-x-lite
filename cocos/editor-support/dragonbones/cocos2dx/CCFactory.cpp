@@ -33,20 +33,51 @@ void CCFactory::destroyInstance()
     auto __rawTexture_t = __rawTexture;
     auto __rawDisplay_t = __rawDisplay;
     auto __armatureDisplay_t = __armatureDisplay;
-    std::thread* _thread_t = nullptr;
-    _thread_t = new std::thread([=](){
+    //std::thread* _thread_t = nullptr;
+    //_thread_t = new std::thread([=](){
         if(old_event)old_event->release();
         if(old_release) delete old_release;
-        
-        for (auto&p: (*__rawTexture_t))
-            p->release();
-        for (auto&p: (*__rawDisplay_t))
-            p->release();
+    
         for (auto&p: (*__armatureDisplay_t))
+        {
+            p->_armature = nullptr;
             p->release();
-        
-        delete _thread_t;
-    });;
+        }
+    
+        std::set<cocos2d::Texture2D*> objs;
+        for (auto&p: (*__rawDisplay_t))
+        {
+            auto tex = p->getTexture();
+            if (tex != nullptr && tex->getReferenceCount() > 1)
+            {
+                objs.insert(tex);
+                delete p;
+            }
+            else
+            {
+                delete p;
+            }
+        }
+    
+        for (auto&p: (*__rawTexture_t))
+        {
+            auto tex = p->getTexture();
+            if (tex != nullptr && tex->getReferenceCount() > 1)
+            {
+                objs.insert(tex);
+                delete p;
+            }
+            else
+            {
+                delete p;
+            }
+        }
+    
+        for (auto&p: (objs))
+            delete p;
+    
+    //    delete _thread_t;
+    //});;
     
     __instance = nullptr;
     __rawTexture = new std::vector<cocos2d::SpriteFrame*>;

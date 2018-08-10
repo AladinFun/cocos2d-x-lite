@@ -387,6 +387,13 @@ public:
     /** Get pixel info map, the key-value pairs is PixelFormat and PixelFormatInfo.*/
     static const PixelFormatInfoMap& getPixelFormatInfoMap();
 
+    /**
+     * @js NA
+     * @lua NA
+     */
+    virtual ~Texture2D();
+
+    
 private:
     // noncopyable
     Texture2D(const Texture2D&) = delete;
@@ -395,13 +402,7 @@ private:
     // nonmoveable
     Texture2D(Texture2D&&) = delete;
     Texture2D& operator=(Texture2D&&) = delete;
-
-    /**
-     * @js NA
-     * @lua NA
-     */
-    virtual ~Texture2D();
-
+    
     /**
     * A struct for storing 9-patch image capInsets.
     */
