@@ -102,4 +102,19 @@ void Track::setState(State state)
     }
 };
 
+
+std::mutex& Track::getLocker()
+{
+    return _stateMutex;
+    /*
+    std::lock_guard<std::mutex> lk(_stateMutex);
+    if (_state != state)
+    {
+        _prevState = _state;
+        _state = state;
+        onStateChanged(_state);
+    }
+     */
+};
+
 }} // namespace cocos2d { namespace experimental {

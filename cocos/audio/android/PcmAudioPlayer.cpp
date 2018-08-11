@@ -70,6 +70,7 @@ bool PcmAudioPlayer::prepare(const std::string &url, const PcmData &decResult)
         // It maybe in sub thread
         Track::State prevState = _track->getPrevState();
         auto func = [this, state, prevState](){
+
             // It's in caller's thread
             if (state == Track::State::OVER && prevState != Track::State::STOPPED)
             {
@@ -80,6 +81,12 @@ bool PcmAudioPlayer::prepare(const std::string &url, const PcmData &decResult)
             }
             else if (state == Track::State::STOPPED)
             {
+                if (prevState != Track::State::DESTROYED)
+                {
+                    ALOGV("PcmAudioPlayer is destroy %p", this);
+                    return;
+                }
+
                 if (_playEventCallback != nullptr)
                 {
                     _playEventCallback(State::STOPPED);
@@ -93,18 +100,11 @@ bool PcmAudioPlayer::prepare(const std::string &url, const PcmData &decResult)
                 }
 
                 this->_track->onStateChanged = [](Track::State state){};
-                delete this;
             }
         };
 
-        if (callerThreadId == std::this_thread::get_id())
-        { // onStateChanged(Track::State::STOPPED) is in caller's (Cocos's) thread.
-            func();
-        }
-        else
-        { // onStateChanged(Track::State::OVER) or onStateChanged(Track::State::DESTROYED) are in audio mixing thread.
-            _callerThreadUtils->performFunctionInCallerThread(func);
-        }
+        // onStateChanged(Track::State::OVER) or onStateChanged(Track::State::DESTROYED) are in audio mixing thread.
+        _callerThreadUtils->performFunctionInCallerThread(func);
     };
 
     setVolume(1.0f);

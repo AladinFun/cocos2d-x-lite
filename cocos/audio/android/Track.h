@@ -72,6 +72,7 @@ public:
     inline void setLoop(bool isLoop) { _isLoop = isLoop; };
     inline bool isLoop() const { return _isLoop; };
 
+    std::mutex& getLocker();
     std::function<void(State)> onStateChanged;
 
 private:
