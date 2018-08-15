@@ -59,7 +59,7 @@ static id s_sharedDirectorCaller;
 
 +(void) destroy
 {
-    NSLog(@"[CCDirectorCaller] %@", @"destroy");
+    CCLOG("[CCDirectorCaller] %s", "destroy");
     [s_sharedDirectorCaller stopMainLoop];
     [s_sharedDirectorCaller release];
     s_sharedDirectorCaller = nil;
@@ -72,7 +72,7 @@ static id s_sharedDirectorCaller;
 
 - (instancetype)init
 {
-    NSLog(@"[CCDirectorCaller] %@", @"init");
+    CCLOG("[CCDirectorCaller] %s", "init");
     self = [super init];
     if (self)
     {
@@ -86,7 +86,7 @@ static id s_sharedDirectorCaller;
 
 -(void) dealloc
 {
-    NSLog(@"[CCDirectorCaller] %@", @"dealloc");
+    CCLOG("[CCDirectorCaller] %s", "dealloc");
     [[NSNotificationCenter defaultCenter] removeObserver:self];
     if(displayLink) {
         [displayLink release];
@@ -97,19 +97,19 @@ static id s_sharedDirectorCaller;
 
 - (void)appDidBecomeActive
 {
-    NSLog(@"[CCDirectorCaller] %@", @"appDidBecomeActive");
+    CCLOG("[CCDirectorCaller] %s", "appDidBecomeActive");
     isAppActive = YES;
 }
 
 - (void)appDidBecomeInactive
 {
-    NSLog(@"[CCDirectorCaller] %@", @"appDidBecomeInactive");
+    CCLOG("[CCDirectorCaller] %s", "appDidBecomeInactive");
     isAppActive = NO;
 }
 
 -(void) startMainLoop
 {
-    NSLog(@"[CCDirectorCaller] %@", @"startMainLoop");
+    CCLOG("[CCDirectorCaller] %s", "startMainLoop");
     // Director::setAnimationInterval() is called, we should invalidate it first
     [self stopMainLoop];
 
@@ -120,7 +120,7 @@ static id s_sharedDirectorCaller;
 
 -(void) stopMainLoop
 {
-    NSLog(@"[CCDirectorCaller] %@", @"stopMainLoop");
+    CCLOG("[CCDirectorCaller] %s", "stopMainLoop");
     if(displayLink) {
         [displayLink invalidate];
         displayLink = nil;

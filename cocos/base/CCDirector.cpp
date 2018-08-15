@@ -60,6 +60,7 @@ THE SOFTWARE.
 #include "base/CCAsyncTaskPool.h"
 #include "platform/CCApplication.h"
 #include "editor-support/spine/SkeletonBatch.h"
+#include "editor-support/creator/CCCameraNode.h"
 
 #if CC_ENABLE_SCRIPT_BINDING
 #include "base/CCScriptSupport.h"
@@ -223,7 +224,7 @@ bool Director::init(void)
 
 Director::~Director(void)
 {
-    CCLOGINFO("deallocing Director: %p", this);
+    CCLOG("deallocing Director: %p", this);
     CC_SAFE_RELEASE(_FPSLabel);
     CC_SAFE_RELEASE(_drawnVerticesLabel);
     CC_SAFE_RELEASE(_drawnBatchesLabel);
@@ -405,6 +406,7 @@ float Director::getDeltaTime() const
 }
 void Director::setOpenGLView(GLView *openGLView)
 {
+    CCLOG("[CCDirector] %s  %p", "setOpenGLView", openGLView);
     CCASSERT(openGLView, "opengl view should not be null");
 
     if (_openGLView != openGLView)
@@ -1012,6 +1014,7 @@ void Director::restart()
 
 void Director::reset()
 {
+    CCLOG("[CCDirector] %s", "reset");
 #if CC_ENABLE_GC_FOR_NATIVE_OBJECTS
     auto sEngine = ScriptEngineManager::getInstance()->getScriptEngine();
 #endif // CC_ENABLE_GC_FOR_NATIVE_OBJECTS
@@ -1101,10 +1104,17 @@ void Director::reset()
     GL::invalidateStateCache();
 
     destroyTextureCache();
+    
+    //reset camera node
+    creator::CameraNode* cameraNode = creator::CameraNode::getInstance();
+    if(cameraNode) {
+        cameraNode->setEnable(false);
+    }
 }
 
 void Director::purgeDirector()
 {
+    CCLOG("[CCDirector] %s", "purgeDirector");
     reset();
     
     CHECK_GL_ERROR_DEBUG();
@@ -1123,6 +1133,7 @@ void Director::purgeDirector()
 
 void Director::restartDirector()
 {
+    CCLOG("[CCDirector] %s", "restartDirector");
     reset();
     
     // Texture cache need to be reinitialized
@@ -1190,6 +1201,7 @@ void Director::setNextScene()
 
 void Director::pause()
 {
+    CCLOG("[CCDirector] %s", "pause");
     if (_paused)
     {
         return;
@@ -1204,6 +1216,7 @@ void Director::pause()
 
 void Director::resume()
 {
+    CCLOG("[CCDirector] %s", "resume");
     if (! _paused)
     {
         return;
@@ -1424,6 +1437,7 @@ void Director::setEventDispatcher(EventDispatcher* dispatcher)
 
 void Director::startAnimation()
 {
+    CCLOG("[CCDirector] %s", "startAnimation");
     _lastUpdate = std::chrono::steady_clock::now();
 
     _invalid = false;
@@ -1459,6 +1473,7 @@ void Director::mainLoop()
 
 void Director::stopAnimation()
 {
+    CCLOG("[CCDirector] %s", "stopAnimation");
     _invalid = true;
 }
 

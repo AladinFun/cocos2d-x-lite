@@ -66,12 +66,13 @@ TextureCache::TextureCache()
 
 TextureCache::~TextureCache()
 {
-    CCLOGINFO("deallocing TextureCache: %p", this);
+    CCLOG("[GL] START deallocing TextureCache: %p", this);
 
     for( auto it=_textures.begin(); it!=_textures.end(); ++it)
         (it->second)->release();
 
     CC_SAFE_DELETE(_loadingThread);
+    CCLOG("[GL] END deallocing TextureCache: %p", this);
 }
 
 void TextureCache::destroyInstance()
@@ -603,6 +604,8 @@ std::string TextureCache::getTextureFilePath( cocos2d::Texture2D *texture )const
 
 void TextureCache::waitForQuit()
 {
+    void* pthis = this;
+    CCLOG("[GL] start wait for quit %p", pthis);
     // notify sub thread to quick
     std::unique_lock<std::mutex> ul(_requestMutex);
     _needQuit = true;
@@ -612,6 +615,7 @@ void TextureCache::waitForQuit()
 
     // Clear async tasks which are still in the queue.
     addImageAsyncCallBack(0.0f);
+    CCLOG("[GL] end wait for quit %p", pthis);
 }
 
 std::string TextureCache::getCachedTextureInfo() const

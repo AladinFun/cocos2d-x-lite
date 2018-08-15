@@ -454,6 +454,9 @@ Texture2D::Texture2D()
     //glcount = glcount + 1;
     _antialiasEnabled = Director::getInstance()->getOpenGLView()->isAntiAliasEnabled();
     //cacheList.insert(this);
+    _textureCachePointer = Director::getInstance()->getTextureCache();
+    
+    CCLOG("[GL] new Texture2D: %p owner:%p", this, _textureCachePointer);
 }
 
 Texture2D::~Texture2D()
@@ -464,7 +467,7 @@ Texture2D::~Texture2D()
 
     //glcount = glcount - 1;
     //cacheList.erase(this);
-    CCLOGERROR("deallocing Texture2D: %p - id=%u", this, _name);
+    CCLOG("[GL] deallocing Texture2D: %p - id=%u owner:%p", this, _name, _textureCachePointer);
     CC_SAFE_RELEASE(_shaderProgram);
 
     CC_SAFE_DELETE(_ninePatchInfo);

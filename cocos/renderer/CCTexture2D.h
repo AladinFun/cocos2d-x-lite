@@ -506,6 +506,8 @@ protected:
 
     /** texture name */
     GLuint _name;
+    
+    void* _textureCachePointer;
 
     /** texture max S */
     GLfloat _maxS;
