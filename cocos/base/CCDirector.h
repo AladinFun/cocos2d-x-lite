@@ -515,6 +515,8 @@ public:
     void setCullingEnabled (bool enable) { _isCullingEnabled = enable; }
     bool isCullingEnabled () const { return _isCullingEnabled; }
 
+    std::function<void()> destroyCallback;
+    
 protected:
     void reset();
     
@@ -539,7 +541,6 @@ protected:
     void destroyTextureCache();
 
     void initMatrixStack();
-    
 
     /** Scheduler associated with this director
      @since v2.0

@@ -250,6 +250,11 @@ Director::~Director(void)
     Configuration::destroyInstance();
 
     s_SharedDirector = nullptr;
+    
+    if(destroyCallback) {
+        destroyCallback();
+        destroyCallback = nullptr;
+    }
 }
 
 void Director::setDefaultValues(void)
