@@ -20,5 +20,6 @@ bool jsb_run_script(const std::string& filePath);
 bool jsb_run_script_string(const char* scriptStr);
 #if SCRIPT_ENGINE_TYPE == SCRIPT_ENGINE_V8
 void jsb_on_surface_destroy();
+void jsb_destroy_script_engine();
 #endif
 void jsb_set_xxtea_key(const std::string& key);

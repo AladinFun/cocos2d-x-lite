@@ -205,6 +205,10 @@ void jsb_on_surface_destroy()
 {
     se::ScriptEngine::getInstance()->onSurfaceDestroy();
 }
+void jsb_destroy_script_engine()
+{
+    se::ScriptEngine::destroyInstance();
+}
 #endif
 
 namespace {

@@ -303,6 +303,7 @@ public abstract class Cocos2dxActivity extends AppCompatActivity implements Coco
     public static native int[] getGLContextAttrs();
     public static native void startRuntime(String data);
     public static native void stopRuntime();
+    public static native void restartRuntime();
 
     // ===========================================================
     // Getter & Setter

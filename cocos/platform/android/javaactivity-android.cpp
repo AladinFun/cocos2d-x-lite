@@ -123,7 +123,9 @@ JNIEXPORT void Java_org_cocos2dx_lib_Cocos2dxRenderer_nativeInit(JNIEnv*  env, j
 JNIEXPORT void Java_org_cocos2dx_lib_Cocos2dxRenderer_nativeOnSurfaceDestroy(JNIEnv*  env, jobject thiz)
 {
     CCLOG("xxxxxxx native.Java_org_cocos2dx_lib_Cocos2dxRenderer_nativeOnSurfaceDestroy");
+#if SCRIPT_ENGINE_TYPE == SCRIPT_ENGINE_V8
     jsb_on_surface_destroy();
+#endif
 }
 
 JNIEXPORT jintArray Java_org_cocos2dx_lib_Cocos2dxActivity_getGLContextAttrs(JNIEnv*  env, jobject thiz)
@@ -144,7 +146,7 @@ JNIEXPORT jintArray Java_org_cocos2dx_lib_Cocos2dxActivity_getGLContextAttrs(JNI
     return glContextAttrsJava;
 }
 
-
+//already called from gl thread
 JNIEXPORT jintArray Java_org_cocos2dx_lib_Cocos2dxActivity_startRuntime(JNIEnv*  env, jobject thiz, jstring data)
 {
     CCLOG("xxxxxxx native.start runtime");
@@ -158,9 +160,22 @@ JNIEXPORT jintArray Java_org_cocos2dx_lib_Cocos2dxActivity_startRuntime(JNIEnv* 
     jsb_run_script_string(startScript.c_str());
 }
 
+//already called from gl thread
+JNIEXPORT jintArray Java_org_cocos2dx_lib_Cocos2dxActivity_restartRuntime(JNIEnv*  env, jobject thiz) {
+    CCLOG("xxxxxxx Java_org_cocos2dx_lib_Cocos2dxActivity_restartRuntime");
+    cocos2d::Director::getInstance()->restart();
+    cocos2d::Director::getInstance()->mainLoop();
+    cocos2d::Application::isRunning = false;
+}
+
 JNIEXPORT jintArray Java_org_cocos2dx_lib_Cocos2dxActivity_stopRuntime(JNIEnv*  env, jobject thiz)
 {
-    cocos2d::Director::getInstance()->restart();
+    CCLOG("xxxxxxx Java_org_cocos2dx_lib_Cocos2dxActivity_stopRuntime");
+    cocos2d::Director::getInstance()->getScheduler()->performFunctionInCocosThread([](){
+        cocos2d::Application::getInstance()->isRunning = false;
+        cocos2d::Director::getInstance()->restart();
+        cocos2d::Director::getInstance()->mainLoop();
+    });
 }
 
 
