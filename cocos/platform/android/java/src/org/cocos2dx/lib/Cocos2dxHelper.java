@@ -57,7 +57,15 @@ import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.Inet4Address;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
+import java.net.ProxySelector;
+import java.net.SocketAddress;
+import java.net.URI;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -671,5 +679,26 @@ public class Cocos2dxHelper {
 
     public static int getSDKVersion() {
         return Build.VERSION.SDK_INT;
+    }
+
+    public static String getProxyInfo(String host) {
+        try {
+            List<Proxy> proxies = ProxySelector.getDefault().select(new URI("http://" + host));
+            if (proxies.size() > 0) {
+                for(int i = 0; i < proxies.size(); i++) {
+                    Proxy p = proxies.get(i);
+                    if(p != Proxy.NO_PROXY) {
+                        SocketAddress addr = p.address();
+                        if(addr instanceof InetSocketAddress) {
+                            InetSocketAddress a = (InetSocketAddress)addr;
+                            return a.getHostName() + ":" + a.getPort();
+                        }
+                    }
+                }
+            }
+        } catch(Throwable t) {
+            Log.e(TAG, "getProxyInfo for " + host + " error", t);
+        }
+        return "";
     }
 }

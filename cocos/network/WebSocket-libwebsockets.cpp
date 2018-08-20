@@ -36,6 +36,9 @@
 #include "platform/CCFileUtils.h"
 #include "platform/CCStdC.h"
 
+//#include <jni.h>
+//#include "platform/android/jni/JniHelper.h"
+
 #include <string>
 #include <vector>
 #include <mutex>
@@ -305,11 +308,11 @@ static lws_context_creation_info convertToContextCreationInfo(const struct lws_p
     info.uid = -1;
     if (peerServerCert)
     {
-        info.options = LWS_SERVER_OPTION_EXPLICIT_VHOSTS | LWS_SERVER_OPTION_DO_SSL_GLOBAL_INIT;
+        info.options = LWS_SERVER_OPTION_DO_SSL_GLOBAL_INIT;
     }
     else
     {
-        info.options = LWS_SERVER_OPTION_EXPLICIT_VHOSTS | LWS_SERVER_OPTION_DO_SSL_GLOBAL_INIT | LWS_SERVER_OPTION_PEER_CERT_NOT_REQUIRED;
+        info.options = LWS_SERVER_OPTION_DO_SSL_GLOBAL_INIT | LWS_SERVER_OPTION_PEER_CERT_NOT_REQUIRED;
     }
     info.user = nullptr;
 
@@ -979,15 +982,15 @@ void WebSocketImpl::onClientOpenConnectionRequest()
         if (uri.isSecure())
             sslConnection = LCCSCF_USE_SSL;
 
-        struct lws_vhost* vhost = nullptr;
-        if (_lwsProtocols != nullptr)
-        {
-            vhost = createVhost(_lwsProtocols, sslConnection);
-        }
-        else
-        {
-            vhost = createVhost(__defaultProtocols, sslConnection);
-        }
+//        struct lws_vhost* vhost = nullptr;
+//        if (_lwsProtocols != nullptr)
+//        {
+//            vhost = createVhost(_lwsProtocols, sslConnection);
+//        }
+//        else
+//        {
+//            vhost = createVhost(__defaultProtocols, sslConnection);
+//        }
 
         int port = static_cast<int>(uri.getPort());
         if (port == 0)
@@ -998,6 +1001,9 @@ void WebSocketImpl::onClientOpenConnectionRequest()
         const std::string& authority = uri.getAuthority();
         if (path.empty())
             path = "/";
+        std::string add_port = hostName.c_str();
+        add_port += ":";
+        add_port += uri.getPort();
 
         struct lws_client_connect_info connectInfo;
         memset(&connectInfo, 0, sizeof(connectInfo));
@@ -1006,13 +1012,41 @@ void WebSocketImpl::onClientOpenConnectionRequest()
         connectInfo.port = port;
         connectInfo.ssl_connection = sslConnection;
         connectInfo.path = path.c_str();
-        connectInfo.host = hostName.c_str();
-        connectInfo.origin = authority.c_str();
+        connectInfo.host = add_port.c_str() ;
+        connectInfo.origin = authority.empty() ? add_port.c_str() : authority.c_str();
         connectInfo.protocol = _clientSupportedProtocols.empty() ? nullptr : _clientSupportedProtocols.c_str();
         connectInfo.ietf_version_or_minus_one = -1;
         connectInfo.userdata = this;
         connectInfo.client_exts = exts;
-        connectInfo.vhost = vhost;
+
+//        char* p = getenv("http_proxy");
+//        if (p)
+//            lws_set_proxy(vhost, p);
+
+//        connectInfo.vhost = vhost;
+
+        cocos2d::JniMethodInfo methodInfo;
+        if (cocos2d::JniHelper::getStaticMethodInfo(methodInfo,
+                                           "org/cocos2dx/lib/Cocos2dxHelper",
+                                           "getProxyInfo",
+                                           "(Ljava/lang/String;)Ljava/lang/String;"))
+        {
+            jobject jStr = methodInfo.env->NewStringUTF(hostName.c_str());
+            jstring jRet = (jstring) methodInfo.env->CallStaticObjectMethod(
+                    methodInfo.classID,
+                    methodInfo.methodID,
+                    jStr
+            );
+            std::string proxy = cocos2d::JniHelper::jstring2string(jRet);
+//            if(proxy.size() > 0) {
+//                if(lws_set_proxy(vhost, proxy.c_str()) == 0) {
+//                    CCLOG("proxy set to -> %s", proxy.c_str());
+//                }
+//            }
+            methodInfo.env->DeleteLocalRef(jStr);
+            methodInfo.env->DeleteLocalRef(jRet);
+            methodInfo.env->DeleteLocalRef(methodInfo.classID);
+        }
 
         _wsInstance = lws_client_connect_via_info(&connectInfo);
 
