@@ -1024,7 +1024,7 @@ void WebSocketImpl::onClientOpenConnectionRequest()
 //            lws_set_proxy(vhost, p);
 
 //        connectInfo.vhost = vhost;
-
+/*
         cocos2d::JniMethodInfo methodInfo;
         if (cocos2d::JniHelper::getStaticMethodInfo(methodInfo,
                                            "org/cocos2dx/lib/Cocos2dxHelper",
@@ -1047,7 +1047,7 @@ void WebSocketImpl::onClientOpenConnectionRequest()
             methodInfo.env->DeleteLocalRef(jRet);
             methodInfo.env->DeleteLocalRef(methodInfo.classID);
         }
-
+*/
         _wsInstance = lws_client_connect_via_info(&connectInfo);
 
         if (nullptr == _wsInstance)
