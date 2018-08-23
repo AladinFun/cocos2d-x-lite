@@ -116,12 +116,13 @@ static id s_sharedDirectorCaller;
     displayLink = [NSClassFromString(@"CADisplayLink") displayLinkWithTarget:self selector:@selector(doCaller:)];
     [displayLink setFrameInterval: self.interval];
     [displayLink addToRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
+    CCLOG("[CCDirectorCaller] %s", "main loop started");
 }
 
 -(void) stopMainLoop
 {
-    CCLOG("[CCDirectorCaller] %s", "stopMainLoop");
     if(displayLink) {
+        CCLOG("[CCDirectorCaller] %s", "stopMainLoop");
         [displayLink invalidate];
         displayLink = nil;
     }

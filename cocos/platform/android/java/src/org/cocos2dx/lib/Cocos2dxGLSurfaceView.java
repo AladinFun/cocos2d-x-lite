@@ -219,7 +219,7 @@ public class Cocos2dxGLSurfaceView extends GLSurfaceView {
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         setMeasuredDimension(widthMeasureSpec, heightMeasureSpec);
-        Log.e(TAG, "xxxxxxx onMeasure" + widthMeasureSpec + ":" + heightMeasureSpec);
+        Log.d(TAG, "xxxxxxx onMeasure" + widthMeasureSpec + ":" + heightMeasureSpec);
 
     }
 

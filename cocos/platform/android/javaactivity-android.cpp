@@ -118,6 +118,16 @@ JNIEXPORT void Java_org_cocos2dx_lib_Cocos2dxRenderer_nativeInit(JNIEnv*  env, j
         director->setGLDefaultValues();
     }
     cocos2d::network::_preloadJavaDownloaderClass();
+
+    JniMethodInfo methodInfo;
+    if (JniHelper::getStaticMethodInfo(methodInfo,
+                                       "com/aladinfun/koalas/RuntimeModule",
+                                       "onRuntimeStarted",
+                                       "()V"))
+    {
+        methodInfo.env->CallStaticVoidMethod(methodInfo.classID, methodInfo.methodID);
+        methodInfo.env->DeleteLocalRef(methodInfo.classID);
+    }
 }
 
 JNIEXPORT void Java_org_cocos2dx_lib_Cocos2dxRenderer_nativeOnSurfaceDestroy(JNIEnv*  env, jobject thiz)
