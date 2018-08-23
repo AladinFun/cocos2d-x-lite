@@ -67,7 +67,7 @@ extern "C"
 
     __sighandler_t bsd_signal(int s, __sighandler_t f) {
         if (bsd_signal_func == NULL) {
-            // For now (up to Android 7.0) this is always available 
+            // For now (up to Android 7.0) this is always available
             bsd_signal_func = (bsd_signal_func_t) dlsym(RTLD_DEFAULT, "bsd_signal");
 
             if (bsd_signal_func == NULL) {
@@ -94,6 +94,16 @@ JNIEXPORT void Java_org_cocos2dx_lib_Cocos2dxRenderer_nativeInit(JNIEnv*  env, j
         cocos_android_app_init(env);
     }
 
+    JniMethodInfo methodInfo;
+    if (JniHelper::getStaticMethodInfo(methodInfo,
+                                       "com/aladinfun/koalas/RuntimeModule",
+                                       "onRenderReady",
+                                       "()V"))
+    {
+        methodInfo.env->CallStaticVoidMethod(methodInfo.classID, methodInfo.methodID);
+        methodInfo.env->DeleteLocalRef(methodInfo.classID);
+    }
+
     auto director = cocos2d::Director::getInstance();
     auto glview = director->getOpenGLView();
     if (!glview)
@@ -118,16 +128,6 @@ JNIEXPORT void Java_org_cocos2dx_lib_Cocos2dxRenderer_nativeInit(JNIEnv*  env, j
         director->setGLDefaultValues();
     }
     cocos2d::network::_preloadJavaDownloaderClass();
-
-    JniMethodInfo methodInfo;
-    if (JniHelper::getStaticMethodInfo(methodInfo,
-                                       "com/aladinfun/koalas/RuntimeModule",
-                                       "onRuntimeStarted",
-                                       "()V"))
-    {
-        methodInfo.env->CallStaticVoidMethod(methodInfo.classID, methodInfo.methodID);
-        methodInfo.env->DeleteLocalRef(methodInfo.classID);
-    }
 }
 
 JNIEXPORT void Java_org_cocos2dx_lib_Cocos2dxRenderer_nativeOnSurfaceDestroy(JNIEnv*  env, jobject thiz)
@@ -140,7 +140,7 @@ JNIEXPORT void Java_org_cocos2dx_lib_Cocos2dxRenderer_nativeOnSurfaceDestroy(JNI
     JniMethodInfo methodInfo;
     if (JniHelper::getStaticMethodInfo(methodInfo,
                                        "com/aladinfun/koalas/RuntimeModule",
-                                       "onRuntimeStopped",
+                                       "onRenderDestroy",
                                        "()V"))
     {
         methodInfo.env->CallStaticVoidMethod(methodInfo.classID, methodInfo.methodID);
