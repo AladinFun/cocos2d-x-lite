@@ -195,6 +195,7 @@ public class Cocos2dxGLSurfaceView extends GLSurfaceView {
                 if (!mWaiteBuild || Cocos2dxGLSurfaceView.this.mCocos2dxRenderer.mNativeInitCompleted)
                     return;
 
+                Log.d(TAG, "onRebuild   1");
                 mWaiteBuild = false;
                 Cocos2dxGLSurfaceView.this.setVisibility(View.GONE);
                 Cocos2dxGLSurfaceView.this.mContainer.get().removeView(Cocos2dxGLSurfaceView.mCocos2dxGLSurfaceView);
@@ -206,6 +207,7 @@ public class Cocos2dxGLSurfaceView extends GLSurfaceView {
                         Cocos2dxGLSurfaceView.this.setZOrderMediaOverlay(true);
                         Cocos2dxGLSurfaceView.this.setVisibility(View.VISIBLE);
                         Cocos2dxGLSurfaceView.this.mContainer.get().addView(Cocos2dxGLSurfaceView.mCocos2dxGLSurfaceView);
+                        Log.d(TAG, "onRebuild   2");
                     }
                 }, 200);
             }
