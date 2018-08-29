@@ -203,11 +203,15 @@ public class Cocos2dxGLSurfaceView extends GLSurfaceView {
                 mRebuildHandle.get().postDelayed(new Runnable() {
                     @Override
                     public void run() {
-                        Cocos2dxGLSurfaceView.this.setFocusableInTouchMode(true);
-                        Cocos2dxGLSurfaceView.this.setZOrderMediaOverlay(true);
-                        Cocos2dxGLSurfaceView.this.setVisibility(View.VISIBLE);
-                        Cocos2dxGLSurfaceView.this.mContainer.get().addView(Cocos2dxGLSurfaceView.mCocos2dxGLSurfaceView);
-                        Log.d(TAG, "onRebuild   2");
+                        try {
+                            Cocos2dxGLSurfaceView.this.setFocusableInTouchMode(true);
+                            Cocos2dxGLSurfaceView.this.setZOrderMediaOverlay(true);
+                            Cocos2dxGLSurfaceView.this.setVisibility(View.VISIBLE);
+                            Cocos2dxGLSurfaceView.this.mContainer.get().addView(Cocos2dxGLSurfaceView.mCocos2dxGLSurfaceView);
+                            Log.d(TAG, "onRebuild   2");
+                        } catch(Throwable t) {
+                            Log.e(TAG, t.getMessage(), t);
+                        }
                     }
                 }, 200);
             }
