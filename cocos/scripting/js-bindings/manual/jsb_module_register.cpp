@@ -85,6 +85,7 @@
 
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID)
 #include "cocos/scripting/js-bindings/manual/JavaScriptJavaBridge.h"
+#include "cocos/scripting/js-bindings/manual/jsb_udp_android_manual.hpp"
 #endif
 
 #include "cocos2d.h"
@@ -189,6 +190,8 @@ bool jsb_register_all_modules()
 
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID)
     se->addRegisterCallback(register_javascript_java_bridge);
+    // udp
+    se->addRegisterCallback(register_all_udp_android_manual);
 #endif
 
     // run_boot_script has to be at last.

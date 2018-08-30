@@ -32,6 +32,7 @@ import org.cocos2dx.javascript.SDKWrapper;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
+import android.view.ViewGroup;
 
 public class AppActivity extends Cocos2dxActivity {
 
@@ -49,11 +50,12 @@ public class AppActivity extends Cocos2dxActivity {
         // DO OTHER INITIALIZATION BELOW
         
         SDKWrapper.getInstance().init(this);
+        UDPSocket.activity = this;
     }
 	
     @Override
     public Cocos2dxGLSurfaceView onCreateView() {
-        Cocos2dxGLSurfaceView glSurfaceView = new Cocos2dxGLSurfaceView(this);
+        Cocos2dxGLSurfaceView glSurfaceView = new Cocos2dxGLSurfaceView(this, (ViewGroup) null);
         // TestCpp should create stencil buffer
         glSurfaceView.setEGLConfigChooser(5, 6, 5, 0, 16, 8);
 

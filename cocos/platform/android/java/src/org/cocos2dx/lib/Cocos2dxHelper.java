@@ -24,6 +24,7 @@ THE SOFTWARE.
  ****************************************************************************/
 package org.cocos2dx.lib;
 
+import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.media.AudioManager;
 import android.app.Activity;
@@ -168,16 +169,20 @@ public class Cocos2dxHelper {
             sInited = true;
             
             int versionCode = 1;
-            try {
-                versionCode = Cocos2dxContext.getActivity().getPackageManager().getPackageInfo(Cocos2dxHelper.getCocos2dxPackageName(), 0).versionCode;
-            } catch (NameNotFoundException e) {
-                e.printStackTrace();
-            }
-            try {
-                Cocos2dxHelper.sOBBFile = APKExpansionSupport.getAPKExpansionZipFile(Cocos2dxContext.getActivity(), versionCode, 0);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+//            try {
+//                String _packageName = Cocos2dxHelper.getCocos2dxPackageName();
+//                Activity _activity = Cocos2dxContext.getActivity();
+//                PackageManager _packageManager = _activity.getPackageManager();
+//                PackageInfo _packageInfo = _packageManager.getPackageInfo(_packageName,0);
+//                versionCode = Cocos2dxContext.getActivity().getPackageManager().getPackageInfo(Cocos2dxHelper.getCocos2dxPackageName(), 0).versionCode;
+//            } catch (NameNotFoundException e) {
+//                e.printStackTrace();
+//            }
+//            try {
+//                Cocos2dxHelper.sOBBFile = APKExpansionSupport.getAPKExpansionZipFile(Cocos2dxContext.getActivity(), versionCode, 0);
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
         }
     }
     

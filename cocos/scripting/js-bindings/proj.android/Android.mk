@@ -67,7 +67,8 @@ LOCAL_SRC_FILES := \
 					../manual/jsb_socketio.cpp \
 					../manual/jsb_spine_manual.cpp \
 					../manual/jsb_websocket.cpp \
-					../manual/jsb_xmlhttprequest.cpp
+					../manual/jsb_xmlhttprequest.cpp \
+					../manual/jsb_udp_android_manual.cpp
 
 LOCAL_CFLAGS := -DHAVE_INSPECTOR
 
@@ -104,4 +105,5 @@ LOCAL_STATIC_LIBRARIES += v8_static
 
 include $(BUILD_STATIC_LIBRARY)
 #==============================================================
+$(call import-add-path, E:/cocos2d-x-lite)
 $(call import-module,cocos)
