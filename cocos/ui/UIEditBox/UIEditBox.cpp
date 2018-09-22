@@ -163,6 +163,13 @@ bool EditBox::initWithSizeAndBackgroundSprite(const Size& size,
     return false;
 }
 
+void EditBox::ccOpenKeyboard() {
+    if (_editBoxImpl != nullptr)
+    {
+        _editBoxImpl->openKeyboard();
+    }
+}
+
 void EditBox::setDelegate(EditBoxDelegate* pDelegate)
 {
     _delegate = pDelegate;

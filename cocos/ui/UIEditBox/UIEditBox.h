@@ -250,6 +250,8 @@ namespace ui {
          */
         void setDelegate(EditBoxDelegate* delegate);
 
+        void ccOpenKeyboard();
+
         /**
          * @js NA
          * @lua NA

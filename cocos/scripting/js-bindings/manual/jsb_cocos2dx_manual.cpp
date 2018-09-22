@@ -2088,9 +2088,27 @@ static bool js_cocos2dx_CCEditBox_setDelegate(se::State& s)
 }
 SE_BIND_FUNC(js_cocos2dx_CCEditBox_setDelegate)
 
+static bool js_cocos2dx_ui_EditBox_openKeyboard(se::State& s)
+{
+//    const auto& args = s.args();
+//    int argc = (int)args.size();
+//    if (argc == 1)
+//    {
+    cocos2d::ui::EditBox* cobj = (cocos2d::ui::EditBox*)s.nativeThisObject();
+    cobj->ccOpenKeyboard();
+
+    return true;
+//    }
+//
+//    SE_REPORT_ERROR("wrong number of arguments: %d, was expecting %d", argc, 1);
+//    return false;
+}
+SE_BIND_FUNC(js_cocos2dx_ui_EditBox_openKeyboard)
+
 bool register_ui_manual(se::Object* obj)
 {
     __jsb_cocos2d_ui_EditBox_proto->defineFunction("setDelegate", _SE(js_cocos2dx_CCEditBox_setDelegate));
+    __jsb_cocos2d_ui_EditBox_proto->defineFunction("ccOpenKeyboard", _SE(js_cocos2dx_ui_EditBox_openKeyboard));
 
     se::ScriptEngine::getInstance()->clearException();
     return true;

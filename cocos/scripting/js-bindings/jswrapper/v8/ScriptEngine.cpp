@@ -609,7 +609,7 @@ namespace se {
             options.set_port((int)_debuggerServerPort);
             options.set_host_name(_debuggerServerAddr.c_str());
             bool ok = _env->inspector_agent()->Start(platform, "", options);
-            assert(ok);
+//            assert(ok);
 #endif
         }
         //
