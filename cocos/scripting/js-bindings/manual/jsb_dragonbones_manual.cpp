@@ -470,7 +470,7 @@ bool register_all_dragonbones_manual(se::Object* obj)
     });
 
     se::ScriptEngine::getInstance()->addAfterCleanupHook([](){
-        CCLOGERROR("addAfterCleanupHook dragon ", dragonBones::BaseObject::getAllObjects().size());
+        CCLOGERROR("addAfterCleanupHook dragon %u", dragonBones::BaseObject::getAllObjects().size());
         dragonBones::CCFactory::destroyInstance();
         dragonBones::BaseObject::destroyAllObjects();
     });
