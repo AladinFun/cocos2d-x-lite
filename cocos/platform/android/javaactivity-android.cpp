@@ -96,7 +96,7 @@ JNIEXPORT void Java_org_cocos2dx_lib_Cocos2dxRenderer_nativeInit(JNIEnv*  env, j
 
     JniMethodInfo methodInfo;
     if (JniHelper::getStaticMethodInfo(methodInfo,
-                                       "com/aladinfun/yoha/RuntimeModule",
+                                       "com/aladinfun/lib/runtime/RuntimeModule",
                                        "onRenderReady",
                                        "()V"))
     {
@@ -139,7 +139,7 @@ JNIEXPORT void Java_org_cocos2dx_lib_Cocos2dxRenderer_nativeOnSurfaceDestroy(JNI
 #if CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
     JniMethodInfo methodInfo;
     if (JniHelper::getStaticMethodInfo(methodInfo,
-                                       "com/aladinfun/yoha/RuntimeModule",
+                                       "com/aladinfun/lib/runtime/RuntimeModule",
                                        "onRenderDestroy",
                                        "()V"))
     {
