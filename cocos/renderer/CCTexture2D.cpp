@@ -455,7 +455,7 @@ Texture2D::Texture2D()
     _antialiasEnabled = Director::getInstance()->getOpenGLView()->isAntiAliasEnabled();
     //cacheList.insert(this);
     _textureCachePointer = Director::getInstance()->getTextureCache();
-    
+
     CCLOG("[GL] new Texture2D: %p owner:%p", this, _textureCachePointer);
 }
 
@@ -567,6 +567,8 @@ bool Texture2D::initWithData(const void *data, ssize_t dataLen, Texture2D::Pixel
 {
     CCASSERT(dataLen>0 && pixelsWide>0 && pixelsHigh>0, "Invalid size");
 
+    CCLOG("Texture2D::initWithData(%d = %d * %d)", dataLen, pixelsWide, pixelsHigh);
+
     //if data has no mipmaps, we will consider it has only one mipmap
     MipmapInfo mipmap;
     mipmap.address = (unsigned char*)data;
@@ -630,14 +632,35 @@ bool Texture2D::initWithMipmaps(MipmapInfo* mipmaps, int mipmapsNum, PixelFormat
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     }
 
+	// clean possible GL error
+    GLenum err = glGetError();
+    if (err != GL_NO_ERROR)
+    {
+        cocos2d::log("OpenGL error 0x%04X in %s %s %d %d*%d\n", err, __FILE__, __FUNCTION__, __LINE__, pixelsWide, pixelsHigh);
+    }
+
     if(_name != 0)
     {
         GL::deleteTexture(_name);
         _name = 0;
     }
 
+	// clean possible GL error
+    err = glGetError();
+    if (err != GL_NO_ERROR)
+    {
+        cocos2d::log("OpenGL error 0x%04X in %s %s %d %d*%d\n", err, __FILE__, __FUNCTION__, __LINE__, pixelsWide, pixelsHigh);
+    }
+
     glGenTextures(1, &_name);
     GL::bindTexture2D(_name);
+
+	// clean possible GL error
+    err = glGetError();
+    if (err != GL_NO_ERROR)
+    {
+        cocos2d::log("OpenGL error 0x%04X in %s %s %d %d*%d\n", err, __FILE__, __FUNCTION__, __LINE__, pixelsWide, pixelsHigh);
+    }
 
     if (mipmapsNum == 1)
     {
@@ -647,9 +670,23 @@ bool Texture2D::initWithMipmaps(MipmapInfo* mipmaps, int mipmapsNum, PixelFormat
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, _antialiasEnabled ? GL_LINEAR_MIPMAP_NEAREST : GL_NEAREST_MIPMAP_NEAREST);
     }
 
+	// clean possible GL error
+    err = glGetError();
+    if (err != GL_NO_ERROR)
+    {
+        cocos2d::log("OpenGL error 0x%04X in %s %s %d %d*%d\n", err, __FILE__, __FUNCTION__, __LINE__, pixelsWide, pixelsHigh);
+    }
+
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, _antialiasEnabled ? GL_LINEAR : GL_NEAREST );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+
+	// clean possible GL error
+    err = glGetError();
+    if (err != GL_NO_ERROR)
+    {
+        cocos2d::log("OpenGL error 0x%04X in %s %s %d %d*%d\n", err, __FILE__, __FUNCTION__, __LINE__, pixelsWide, pixelsHigh);
+    }
 
 #if CC_ENABLE_CACHE_TEXTURE_DATA
     if (_antialiasEnabled)
@@ -665,10 +702,10 @@ bool Texture2D::initWithMipmaps(MipmapInfo* mipmaps, int mipmapsNum, PixelFormat
 #endif
 
     // clean possible GL error
-    GLenum err = glGetError();
+    err = glGetError();
     if (err != GL_NO_ERROR)
     {
-        cocos2d::log("OpenGL error 0x%04X in %s %s %d\n", err, __FILE__, __FUNCTION__, __LINE__);
+        cocos2d::log("OpenGL error 0x%04X in %s %s %d %d*%d\n", err, __FILE__, __FUNCTION__, __LINE__, pixelsWide, pixelsHigh);
     }
 
     // Specify OpenGL texture image
@@ -756,6 +793,8 @@ bool Texture2D::initWithImage(Image *image, PixelFormat format)
     int imageHeight = image->getHeight();
     this->_filePath = image->getFilePath();
     Configuration *conf = Configuration::getInstance();
+
+    CCLOG("Texture2D::initWithImage(%d*%d %s)", imageWidth, imageHeight, this->_filePath.c_str());
 
     int maxTextureSize = conf->getMaxTextureSize();
     if (imageWidth > maxTextureSize || imageHeight > maxTextureSize)
