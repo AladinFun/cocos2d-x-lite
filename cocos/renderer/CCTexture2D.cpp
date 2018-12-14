@@ -456,7 +456,7 @@ Texture2D::Texture2D()
     //cacheList.insert(this);
     _textureCachePointer = Director::getInstance()->getTextureCache();
 
-    CCLOG("[GL] new Texture2D: %p owner:%p", this, _textureCachePointer);
+    cocos2d::log("[GL] new Texture2D: %p owner:%p", this, _textureCachePointer);
 }
 
 Texture2D::~Texture2D()
@@ -467,7 +467,7 @@ Texture2D::~Texture2D()
 
     //glcount = glcount - 1;
     //cacheList.erase(this);
-    CCLOG("[GL] deallocing Texture2D: %p - id=%u owner:%p", this, _name, _textureCachePointer);
+    cocos2d::log("[GL] deallocing Texture2D: %p - id=%u owner:%p", this, _name, _textureCachePointer);
     CC_SAFE_RELEASE(_shaderProgram);
 
     CC_SAFE_DELETE(_ninePatchInfo);
@@ -567,7 +567,7 @@ bool Texture2D::initWithData(const void *data, ssize_t dataLen, Texture2D::Pixel
 {
     CCASSERT(dataLen>0 && pixelsWide>0 && pixelsHigh>0, "Invalid size");
 
-    CCLOG("Texture2D::initWithData(%d = %d * %d)", dataLen, pixelsWide, pixelsHigh);
+    cocos2d::log("Texture2D::initWithData(%d = %d * %d)", dataLen, pixelsWide, pixelsHigh);
 
     //if data has no mipmaps, we will consider it has only one mipmap
     MipmapInfo mipmap;
@@ -794,7 +794,7 @@ bool Texture2D::initWithImage(Image *image, PixelFormat format)
     this->_filePath = image->getFilePath();
     Configuration *conf = Configuration::getInstance();
 
-    CCLOG("Texture2D::initWithImage(%d*%d %s)", imageWidth, imageHeight, this->_filePath.c_str());
+    cocos2d::log("Texture2D::initWithImage(%d*%d %s)", imageWidth, imageHeight, this->_filePath.c_str());
 
     int maxTextureSize = conf->getMaxTextureSize();
     if (imageWidth > maxTextureSize || imageHeight > maxTextureSize)
