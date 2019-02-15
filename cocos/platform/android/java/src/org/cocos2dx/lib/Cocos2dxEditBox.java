@@ -25,22 +25,19 @@ THE SOFTWARE.
 package org.cocos2dx.lib;
 
 import android.content.Context;
-import android.graphics.Color;
 import android.graphics.Typeface;
-import android.support.v7.widget.AppCompatEditText;
 import android.text.InputFilter;
 import android.text.InputType;
 import android.text.method.PasswordTransformationMethod;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.KeyEvent;
-import android.view.View;
 import android.view.inputmethod.EditorInfo;
-import android.widget.EditText;
 import android.widget.FrameLayout;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import androidx.appcompat.widget.AppCompatEditText;
 
 public class Cocos2dxEditBox extends AppCompatEditText {
     /**
