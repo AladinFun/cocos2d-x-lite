@@ -29,6 +29,6 @@ android {
 dependencies {
     api fileTree(dir: '../java/libs', include: ['com.android.vending.expansion.zipfile.jar'])
     api 'com.loopj.android:android-async-http:1.4.9'
-    api 'com.android.support:support-v4:' + rootProject.ext.android.supportLibVersion
-    api 'com.android.support:appcompat-v7:' + rootProject.ext.android.supportLibVersion
+    api rootProject.ext.dependencies.androidx.support_v4
+    api rootProject.ext.dependencies.androidx.appcompat_v7
 }
